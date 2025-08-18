@@ -4,6 +4,7 @@
 #include <SFML/Graphics.hpp>
 #include <array>
 #include <cmath>
+#include <random>
 
 class TooEarlySprite final : public sf::Drawable, public sf::Transformable
 {
@@ -67,6 +68,7 @@ public:
                 else
                     a = 1.f - (elapsed - 0.1f) / 3.9f, b = 1.f - (elapsed - 0.1f) / 10.f;
                 it->opacity = a;
+                it->angle = it->endAngle * static_cast<float>(AdoCpp::ease(AdoCpp::Easing::OutQuint, elapsed / 4.f));
                 it->scale = {b, b};
                 if (it->hitMargin == AdoCpp::HitMargin::TooEarly)
                 {
@@ -77,35 +79,52 @@ public:
             }
         }
     }
-    void setFont(const sf::Font& l_font)
+    void setFont(const sf::Font& font)
     {
-        m_font = l_font;
+        m_font = font;
         for (size_t i = 0; i < 7; i++)
         {
             m_text[i].setCharacterSize(32);
         }
         static const sf::Color green = sf::Color::Green, yellow = sf::Color::Yellow, orange = sf::Color(0xff8800ff),
                                red = sf::Color::Red;
+        using enum AdoCpp::HitMargin;
         // ReSharper disable CppCStyleCast
-        m_text[(int)AdoCpp::HitMargin::Perfect].setFillColor(green);
-        m_text[(int)AdoCpp::HitMargin::Perfect].setString("Perfect!");
-        m_text[(int)AdoCpp::HitMargin::LatePerfect].setFillColor(yellow);
-        m_text[(int)AdoCpp::HitMargin::LatePerfect].setString("LPerfect!");
-        m_text[(int)AdoCpp::HitMargin::EarlyPerfect].setFillColor(yellow);
-        m_text[(int)AdoCpp::HitMargin::EarlyPerfect].setString("EPerfect!");
-        m_text[(int)AdoCpp::HitMargin::VeryLate].setFillColor(orange);
-        m_text[(int)AdoCpp::HitMargin::VeryLate].setString("Late!");
-        m_text[(int)AdoCpp::HitMargin::VeryEarly].setFillColor(orange);
-        m_text[(int)AdoCpp::HitMargin::VeryEarly].setString("Early!");
-        m_text[(int)AdoCpp::HitMargin::TooLate].setFillColor(red);
-        m_text[(int)AdoCpp::HitMargin::TooLate].setString("Late!!");
-        m_text[(int)AdoCpp::HitMargin::TooEarly].setFillColor(red);
-        m_text[(int)AdoCpp::HitMargin::TooEarly].setString("Early!!");
+        m_text[(int)Perfect].setFillColor(green);
+        m_text[(int)Perfect].setString("Perfect!");
+        m_text[(int)LatePerfect].setFillColor(yellow);
+        m_text[(int)LatePerfect].setString("LPerfect!");
+        m_text[(int)EarlyPerfect].setFillColor(yellow);
+        m_text[(int)EarlyPerfect].setString("EPerfect!");
+        m_text[(int)VeryLate].setFillColor(orange);
+        m_text[(int)VeryLate].setString("Late!");
+        m_text[(int)VeryEarly].setFillColor(orange);
+        m_text[(int)VeryEarly].setString("Early!");
+        m_text[(int)TooLate].setFillColor(red);
+        m_text[(int)TooLate].setString("Late!!");
+        m_text[(int)TooEarly].setFillColor(red);
+        m_text[(int)TooEarly].setString("Early!!");
         // ReSharper restore CppCStyleCast
+    }
+    sf::String getText(const AdoCpp::HitMargin hitMargin) const
+    {
+        return m_text[static_cast<int>(hitMargin)].getString();
+    }
+    void setText(const AdoCpp::HitMargin hitMargin, const sf::String& text)
+    {
+        m_text[static_cast<int>(hitMargin)].setString(text);
     }
     void addHitText(const double seconds, const AdoCpp::HitMargin hitMargin, const sf::Vector2f position)
     {
-        m_hitTexts.push_back({seconds, hitMargin, position});
+        static std::random_device rd;
+        static std::mt19937 gen(rd());
+        using urd = std::uniform_real_distribution<float>;
+        using enum AdoCpp::HitMargin;
+        const float deg = hitMargin == Perfect                      ? 0
+            : hitMargin == EarlyPerfect || hitMargin == LatePerfect ? urd(-30.f, 30.f)(gen)
+            : hitMargin == VeryEarly || hitMargin == VeryLate       ? urd(-60.f, 60.f)(gen)
+                                                                    : urd(-90.f, 90.f)(gen);
+        m_hitTexts.push_back({seconds, hitMargin, position, sf::degrees(deg)});
     }
     bool hidePerfects = true;
 
@@ -126,7 +145,8 @@ private:
             sf::Text text = m_text[static_cast<int>(hitText.hitMargin)];
             text.setPosition(hitText.position + sf::Vector2f({0, 1}));
             text.setOrigin(text.getLocalBounds().size / 2.f);
-            sf::Vector2f scale = hitText.scale * 0.008f;
+            text.setRotation(hitText.angle);
+            sf::Vector2f scale = hitText.scale * 0.007f;
             scale.y *= -1;
             text.setScale(scale);
             sf::Color color = text.getFillColor();
@@ -146,6 +166,8 @@ private:
         double secondsBegin;
         AdoCpp::HitMargin hitMargin;
         sf::Vector2f position;
+        sf::Angle endAngle;
+        sf::Angle angle;
         sf::Vector2f scale;
         double opacity;
         TooEarlySprite tes;
@@ -155,10 +177,4 @@ private:
     sf::Font& m_font;
     std::array<sf::Text, 7> m_text = {sf::Text(m_font), sf::Text(m_font), sf::Text(m_font), sf::Text(m_font),
                                       sf::Text(m_font), sf::Text(m_font), sf::Text(m_font)};
-    struct
-    {
-        sf::CircleShape circle;
-        sf::RectangleShape rect1;
-        sf::RectangleShape rect2;
-    } m_tooEarlyShape;
 };

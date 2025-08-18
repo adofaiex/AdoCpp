@@ -14,13 +14,24 @@
 
 namespace AdoCpp
 {
+    /**
+     * @brief Orbit enum to represent the orbit of the planets.
+     */
     enum Orbit
     {
         CounterClockwise,
         Clockwise,
     };
+    /**
+     * Reverse the orbit.
+     * @param orbit the original orbit.
+     * @return the reverse orbit.
+     */
     inline Orbit operator!(const Orbit orbit) { return orbit == Clockwise ? CounterClockwise : Clockwise; }
 
+    /**
+     * TrackColorType enum to represent the type of the tile's color.
+     */
     enum class TrackColorType
     {
         Single,
@@ -31,9 +42,17 @@ namespace AdoCpp
         Rainbow,
         Volume,
     };
+    /**
+     * The C-style string array to represent the TrackColorType enum.
+     */
     constexpr const char* const cstrTrackColorType[] = {
         "Single", "Stripes", "Glow", "Blink", "Switch", "Rainbow", "Volume",
     };
+    /**
+     *
+     * @param trackColorType TrackColorType
+     * @return the
+     */
     constexpr const char* trackColorType2cstr(const TrackColorType& trackColorType)
     {
         return cstrTrackColorType[static_cast<int>(trackColorType)];
@@ -141,6 +160,7 @@ namespace AdoCpp
     {
         None,
         Kick,
+        kick, // THE MOON PATCH
         Sizzle,
         Shaker,
         FireTile,
@@ -164,6 +184,7 @@ namespace AdoCpp
     constexpr const char* const cstrHitsound[] = {
         "None",
         "Kick",
+        "kick",
         "Sizzle",
         "Shaker",
         "FireTile",

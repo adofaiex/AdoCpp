@@ -29,6 +29,13 @@ namespace AdoCpp
     static double pow4(const double x) { return x * x * x * x; }
     static double pow5(const double x) { return x * x * x * x * x; }
 
+    /**
+     * @brief Ease.
+     * y = f(x) while f is an easing function.
+     * @param easing Easing function.
+     * @param x x.
+     * @return y.
+     */
     double ease(const Easing easing, const double x)
     {
         if (x <= 0)

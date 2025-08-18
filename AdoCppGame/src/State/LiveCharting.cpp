@@ -308,9 +308,8 @@ void LiveCharting::renderAudioWindow()
 
             if (samples)
             {
-                const double audioLengthInSeconds =
-                    static_cast<double>(soundBuffer->getSampleCount()) / soundBuffer->getChannelCount() /
-                    soundBuffer->getSampleRate();
+                const double audioLengthInSeconds = static_cast<double>(soundBuffer->getSampleCount()) /
+                    soundBuffer->getChannelCount() / soundBuffer->getSampleRate();
                 ImPlot::SetupAxisLimitsConstraints(ImAxis_X1, -audioLengthInSeconds / 2, audioLengthInSeconds * 3 / 2);
                 const size_t widthPx = ImPlot::GetPlotSize().x;
                 double t1 = ImPlot::GetPlotLimits().X.Min;
@@ -412,7 +411,7 @@ void LiveCharting::renderLevelSettings() const
     constexpr ImGuiWindowFlags flags =
         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
     const float width = ImGui::GetFontSize() * 20, height = ImGui::GetFontSize() * 20;
-    ImGui::SetNextWindowPos({0, static_cast<float>(game->windowSize.y) - height});
+    ImGui::SetNextWindowPos({0, static_cast<float>(game->windowSize.y)}, 0, {0, 1});
     ImGui::SetNextWindowSize({width, height});
     if (ImGui::Begin("Settings", nullptr, flags))
     {
@@ -421,8 +420,9 @@ void LiveCharting::renderLevelSettings() const
         static constexpr std::array<const char* const, 7> titles = {
             "Song Settings",   "Level Settings",         "Track Settings", "Background Settings",
             "Camera Settings", "Miscellaneous Settings", "Decorations"};
-        static constexpr std::array funcs = {&LiveCharting::renderSSong,       &LiveCharting::renderSLevel,  &LiveCharting::renderSTrack,
-                                             &LiveCharting::renderSBackground, &LiveCharting::renderSCamera, &LiveCharting::renderSMiscellaneous,
+        static constexpr std::array funcs = {&LiveCharting::renderSSong,       &LiveCharting::renderSLevel,
+                                             &LiveCharting::renderSTrack,      &LiveCharting::renderSBackground,
+                                             &LiveCharting::renderSCamera,     &LiveCharting::renderSMiscellaneous,
                                              &LiveCharting::renderSDecorations};
         if (ImGui::BeginTabBar("EventTabBar", ImGuiTabBarFlags_FittingPolicyScroll))
         {
@@ -446,7 +446,7 @@ void LiveCharting::renderEventBar() const
     constexpr ImGuiWindowFlags flags =
         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
     const float barWidth = ImGui::GetFontSize() * 20, barHeight = ImGui::GetFontSize() * 5;
-    ImGui::SetNextWindowPos({game->windowSize.x / 2.f - barWidth / 2.f, game->windowSize.y - barHeight});
+    ImGui::SetNextWindowPos({game->windowSize.x / 2.f, static_cast<float>(game->windowSize.y)}, 0, {0.5, 1});
     ImGui::SetNextWindowSize({barWidth, barHeight});
     if (game->activeTileIndex)
     {
@@ -512,7 +512,8 @@ void LiveCharting::renderEventSettings() const
         constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
             ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
         const float width = ImGui::GetFontSize() * 20, height = ImGui::GetFontSize() * 20;
-        ImGui::SetNextWindowPos({game->windowSize.x - width, game->windowSize.y - height});
+        ImGui::SetNextWindowPos({static_cast<float>(game->windowSize.x), static_cast<float>(game->windowSize.y)}, 0,
+                                {1, 1});
         ImGui::SetNextWindowSize({width, height});
         if (ImGui::Begin("Event", nullptr, flags)) // FIXME
         {

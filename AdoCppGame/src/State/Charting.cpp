@@ -229,7 +229,7 @@ void StateCharting::renderFilenameBar()
 {
     const float barWidth = ImGui::GetFontSize() * 15;
     ImGui::SetNextWindowSize(ImVec2(barWidth, 0));
-    ImGui::SetNextWindowPos(ImVec2(static_cast<float>(game->windowSize.x) / 2.f - barWidth / 2.f, 0));
+    ImGui::SetNextWindowPos(ImVec2(static_cast<float>(game->windowSize.x) / 2.f, 0), 0, ImVec2(0.5, 0));
     if (ImGui::Begin("FilenameBar", nullptr, ADOCPPGAME_FLAGS))
     {
         ImVec2 center = ImGui::GetMainViewport()->GetCenter();
@@ -357,7 +357,7 @@ void StateCharting::renderLevelSettings() const
 {
     const float width = ImGui::GetFontSize() * 15, height = ImGui::GetFontSize() * 30;
     ImGui::SetNextWindowSize(ImVec2(width, height));
-    ImGui::SetNextWindowPos(ImVec2(0, static_cast<float>(game->windowSize.y) / 2.f - height / 2.f));
+    ImGui::SetNextWindowPos(ImVec2(0, static_cast<float>(game->windowSize.y) / 2.f), 0, ImVec2(0, 0.5));
     if (ImGui::Begin("Settings", nullptr, ADOCPPGAME_FLAGS))
     {
         const float settingsTabContentWidth = width / 5 * 4;
@@ -404,8 +404,9 @@ void StateCharting::renderEventSettings() const
     {
         const auto& tile = game->level.tiles[*game->activeTileIndex];
         ImGui::SetNextWindowSize(ImVec2(width, height));
-        ImGui::SetNextWindowPos(ImVec2(static_cast<float>(game->windowSize.x) - width,
-                                       static_cast<float>(game->windowSize.y) / 2.f - height / 2.f));
+        ImGui::SetNextWindowPos(
+            ImVec2(static_cast<float>(game->windowSize.x), static_cast<float>(game->windowSize.y) / 2.f), 0,
+            ImVec2(1, 0.5));
         if (ImGui::Begin("EventSettings", nullptr, ADOCPPGAME_FLAGS))
         {
             const float tabButtonsWidth = width / 5, rightSettingsTabContentWidth = width - tabButtonsWidth;
