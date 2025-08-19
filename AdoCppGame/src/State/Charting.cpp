@@ -477,7 +477,11 @@ void StateCharting::renderControlPad() const
                 game->window.setFramerateLimit(game->config.fpsLimit);
         }
         ImGui::Checkbox("Block Keyboard Chatter", &game->config.blockKeyboardChatter);
-        ImGui::Checkbox("Hide Perfects", &game->config.hidePerfects);
+        if (ImGui::TreeNode("Hit Text"))
+        {
+            ImGui::Checkbox("Hide Perfects", &game->config.hidePerfects);
+            ImGui::TreePop();
+        }
         ImGui::Checkbox("Timer Sync With Music", &game->config.syncWithMusic);
         if (ImGui::TreeNode("Performance"))
         {
@@ -487,6 +491,19 @@ void StateCharting::renderControlPad() const
                 game->level.disableAnimateTrack(disableAnimationTrack);
                 parseUpdateLevel(0);
             }
+            ImGui::TreePop();
+        }
+        if (ImGui::TreeNode("Key Viewer"))
+        {
+            if (static float rainSpeed = game->config.rainSpeed.asSeconds();
+                ImGui::InputFloat("Rain Speed (sec)", &rainSpeed, 0.1f, 1.f))
+                rainSpeed = std::max(rainSpeed, 0.f), game->config.rainSpeed = sf::seconds(rainSpeed);
+            ImGui::InputFloat("Rain Length", &game->config.rainLength, 1.f, 10.f);
+            ImGui::InputFloat("Key Size", &game->config.keySize, 1.f, 10.f);
+            ImGui::InputFloat("Gap Size Between Key and Key", &game->config.gapSize, 1.f, 10.f);
+            ImGui::InputFloat("Gap Size Between Key and Rain", &game->config.rainKeyGapSize, 1.f, 10.f);
+            ImGui::Checkbox("Key Show Hit Error", &game->config.keyShowHitError);
+            ImGui::Checkbox("Rain Show Hit Error", &game->config.rainShowHitError);
             ImGui::TreePop();
         }
         if (static size_t index; ImGui::TreeNode("Keystroke Settings"))

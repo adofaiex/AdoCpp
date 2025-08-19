@@ -19,6 +19,7 @@ public:
 
     void handleEvent(sf::Event event) override;
     void update() override;
+    void updateTime();
     void render() override;
 
     static StatePlaying* instance() { return &m_statePlaying; }

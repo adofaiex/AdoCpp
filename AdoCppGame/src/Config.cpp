@@ -30,6 +30,13 @@ void Config::load()
     hidePerfects = document["hidePerfects"].GetBool();
     syncWithMusic = document["syncWithMusic"].GetBool();
     disableAnimationTrack = document["disableAnimationTrack"].GetBool();
+    rainSpeed = sf::seconds(document["rainSpeed"].GetFloat());
+    rainLength = document["rainLength"].GetFloat();
+    keySize = document["keySize"].GetFloat();
+    gapSize = document["gapSize"].GetFloat();
+    rainKeyGapSize = document["rainKeyGapSize"].GetFloat();
+    keyShowHitError = document["keyShowHitError"].GetBool();
+    rainShowHitError = document["rainShowHitError"].GetBool();
     keyLimiter.clear();
     const auto array = document["keyLimiter"].GetArray();
     for (const auto& elem : array)
@@ -43,22 +50,30 @@ void Config::save()
     if (!ofs.is_open())
         throw std::runtime_error("Could not open config file");
     rapidjson::Document doc;
+    auto& alloc = doc.GetAllocator();
     doc.SetObject();
-    doc.AddMember("difficulty", static_cast<int>(difficulty), doc.GetAllocator());
-    doc.AddMember("inputOffset", inputOffset, doc.GetAllocator());
-    doc.AddMember("fpsLimit", fpsLimit, doc.GetAllocator());
-    doc.AddMember("blockKeyboardChatter", blockKeyboardChatter, doc.GetAllocator());
-    doc.AddMember("hidePerfects", hidePerfects, doc.GetAllocator());
-    doc.AddMember("syncWithMusic", syncWithMusic, doc.GetAllocator());
-    doc.AddMember("disableAnimationTrack", disableAnimationTrack, doc.GetAllocator());
+    doc.AddMember("difficulty", static_cast<int>(difficulty), alloc);
+    doc.AddMember("inputOffset", inputOffset, alloc);
+    doc.AddMember("fpsLimit", fpsLimit, alloc);
+    doc.AddMember("blockKeyboardChatter", blockKeyboardChatter, alloc);
+    doc.AddMember("hidePerfects", hidePerfects, alloc);
+    doc.AddMember("syncWithMusic", syncWithMusic, alloc);
+    doc.AddMember("disableAnimationTrack", disableAnimationTrack, alloc);
+    doc.AddMember("rainSpeed", rainSpeed.asSeconds(), alloc);
+    doc.AddMember("rainLength", rainLength, alloc);
+    doc.AddMember("keySize", keySize, alloc);
+    doc.AddMember("gapSize", gapSize, alloc);
+    doc.AddMember("rainKeyGapSize", rainKeyGapSize, alloc);
+    doc.AddMember("keyShowHitError", keyShowHitError, alloc);
+    doc.AddMember("rainShowHitError", rainShowHitError, alloc);
     {
         rapidjson::Value array;
         array.SetArray();
         for (const auto& key : keyLimiter)
         {
-            array.PushBack(static_cast<int>(key), doc.GetAllocator());
+            array.PushBack(static_cast<int>(key), alloc);
         }
-        doc.AddMember("keyLimiter", array, doc.GetAllocator());
+        doc.AddMember("keyLimiter", array, alloc);
     }
     rapidjson::OStreamWrapper osw(ofs);
     rapidjson::EncodedOutputStream<rapidjson::UTF8<>, rapidjson::OStreamWrapper> eos(osw, false);

@@ -11,6 +11,13 @@ struct Config
     bool hidePerfects = true;
     bool syncWithMusic = false;
     bool disableAnimationTrack = false;
+    sf::Time rainSpeed = sf::seconds(0.4f);
+    float rainLength = 240.f;
+    float keySize = 60.f;
+    float gapSize = 3.f;
+    float rainKeyGapSize = 3.f;
+    bool keyShowHitError = false;
+    bool rainShowHitError = false;
     using enum sf::Keyboard::Scan;
     std::vector<sf::Keyboard::Scan> keyLimiter = {
         LControl, CapsLock, Tab, Q, W, E, C, Space,

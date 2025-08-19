@@ -47,14 +47,11 @@ constexpr std::array<sf::Vector2u, 16> posArray16 = {{
     {7, 1},
 }};
 
-KeyViewerSystem::KeyViewerSystem()
+KeyViewerSystem::KeyViewerSystem() :
+    m_rainSpeed(sf::seconds(0.4f)), m_rainLength(40.f), m_keySize(10.f), m_gapSize(0.5f), m_rainKeyGapSize(0.5f),
+    m_keyShowHitError(false), m_rainShowHitError(false)
 {
     m_clock.restart();
-    m_rainSpeed = sf::seconds(0.4f);
-    m_rainLength = 40.f;
-    m_keySize = 10.f;
-    m_gapSize = 0.5f;
-    m_rainKeyGapSize = 0.5f;
 }
 
 std::vector<KeyViewerSystem::Key> KeyViewerSystem::getKeys() { return m_keys; }
@@ -102,24 +99,25 @@ void KeyViewerSystem::setKeyLimiterAuto(const std::vector<sf::Keyboard::Scan>& k
     }
 }
 
-bool KeyViewerSystem::press(const sf::Keyboard::Scan scan)
+bool KeyViewerSystem::press(const sf::Keyboard::Scan scan, const std::optional<AdoCpp::HitMargin> hitMargin)
 {
-    auto it = m_keyPressed.find(scan);
+    const auto it = m_keyPressed.find(scan);
     if (it != m_keyPressed.end() && (it->second.empty() || !it->second.back().press))
     {
-        it->second.push_back(Stamp(true, m_clock.getElapsedTime()));
-        if (it->second.size() >= 3 && it->second[it->second.size() - 3].press == true
-            && it->second[it->second.size() - 3].time.asMilliseconds() + 70 > it->second.back().time.asMilliseconds())
+        it->second.push_back(Stamp(true, m_clock.getElapsedTime(), hitMargin));
+        if (it->second.size() >= 3 && it->second[it->second.size() - 3].press &&
+            it->second[it->second.size() - 3].time.asMilliseconds() + 70 > it->second.back().time.asMilliseconds())
+        {
+            it->second.back().hitMargin = std::nullopt;
             return false; // keyboardChatterBlocker
-        else
-            return true; // keyboardChatterBlocker
+        }
     }
     return true; // keyboardChatterBlocker
 }
 
 void KeyViewerSystem::release(const sf::Keyboard::Scan scan)
 {
-    auto it = m_keyPressed.find(scan);
+    const auto it = m_keyPressed.find(scan);
     if (it != m_keyPressed.end() && !it->second.empty() && it->second.back().press)
         it->second.push_back(Stamp(false, m_clock.getElapsedTime()));
 }
@@ -148,6 +146,20 @@ void KeyViewerSystem::setRainColorByRow(const sf::Color rainColor, unsigned int 
         if (key.pos.y == row)
             key.rainColor = rainColor;
 }
+bool KeyViewerSystem::getKeyShowHitError() const { return m_keyShowHitError; }
+void KeyViewerSystem::setKeyShowHitError(const bool flag) { m_keyShowHitError = flag; }
+bool KeyViewerSystem::getRainShowHitError() const { return m_rainShowHitError; }
+void KeyViewerSystem::setRainShowHitError(const bool flag) { m_rainShowHitError = flag; }
+sf::Time KeyViewerSystem::getRainSpeed() const { return m_rainSpeed; }
+void KeyViewerSystem::setRainSpeed(const sf::Time rainSpeed) { m_rainSpeed = rainSpeed; }
+float KeyViewerSystem::getRainLength() const { return m_rainLength; }
+void KeyViewerSystem::setRainLength(const float rainLength) { m_rainLength = rainLength; }
+float KeyViewerSystem::getKeySize() const { return m_keySize; }
+void KeyViewerSystem::setKeySize(const float keySize) { m_keySize = keySize; }
+float KeyViewerSystem::getGapSize() const { return m_gapSize; }
+void KeyViewerSystem::setGapSize(const float gapSize) { m_gapSize = gapSize; }
+float KeyViewerSystem::getRainKeyGapSize() const { return m_rainKeyGapSize; }
+void KeyViewerSystem::setRainKeyGapSize(const float rainKeyGapSize) { m_rainKeyGapSize = rainKeyGapSize; }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void KeyViewerSystem::update()
@@ -165,6 +177,10 @@ const KeyViewerSystem::Key& KeyViewerSystem::operator[](const size_t index) cons
 
 void KeyViewerSystem::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
+    using enum AdoCpp::HitMargin;
+    static constexpr sf::Color green = sf::Color::Green, yellow = sf::Color::Yellow, orange = sf::Color(0xff8800ff),
+                               red = sf::Color::Red;
+
     states.transform *= getTransform();
     states.texture = nullptr;
     sf::RectangleShape sqrPrs{{m_keySize, m_keySize}};
@@ -186,6 +202,19 @@ void KeyViewerSystem::draw(sf::RenderTarget& target, sf::RenderStates states) co
         if (!stamps.empty() && stamps.back().press)
         {
             sqrPrs.setPosition(sqrPos);
+            if (m_keyShowHitError)
+            {
+                std::optional<AdoCpp::HitMargin> hitMargin = stamps.back().hitMargin;
+                sf::Color color;
+                if (hitMargin)
+                    color = hitMargin == Perfect                                ? green
+                        : hitMargin == LatePerfect || hitMargin == EarlyPerfect ? yellow
+                        : hitMargin == VeryLate || hitMargin == VeryEarly       ? orange
+                                                                                : red;
+                else
+                    color = sf::Color(0x888888ff);
+                sqrPrs.setFillColor(color);
+            }
             target.draw(sqrPrs, states);
         }
         else
@@ -197,11 +226,12 @@ void KeyViewerSystem::draw(sf::RenderTarget& target, sf::RenderStates states) co
             stamps.push_back(Stamp(false, time));
         bool press = false;
         float begin = 0, end = 0;
-        for (const auto& [s_press, s_time] : stamps)
+        std::optional<AdoCpp::HitMargin> hitMargin;
+        for (const auto& [s_press, s_time, s_hitMargin] : stamps)
         {
             press = s_press;
             if (press)
-                begin = (s_time - time) / m_rainSpeed * m_rainLength + m_rainLength;
+                begin = (s_time - time) / m_rainSpeed * m_rainLength + m_rainLength, hitMargin = s_hitMargin;
             else
             {
                 end = (s_time - time) / m_rainSpeed * m_rainLength + m_rainLength;
@@ -210,7 +240,25 @@ void KeyViewerSystem::draw(sf::RenderTarget& target, sf::RenderStates states) co
                 if (begin < 0)
                     begin = 0;
                 sf::RectangleShape rect{{m_keySize, end - begin}};
-                rect.setFillColor(rainColor);
+                if (m_rainShowHitError)
+                {
+                    sf::Color color;
+                    if (hitMargin)
+                        color = hitMargin == Perfect                                ? green
+                            : hitMargin == LatePerfect || hitMargin == EarlyPerfect ? yellow
+                            : hitMargin == VeryLate || hitMargin == VeryEarly       ? orange
+                                                                                    : red;
+                    else
+                        color = sf::Color(0x888888ff);
+                    uint8_t value = static_cast<uint8_t>(std::min(255u, 192 * pos.y));
+                    color = sf::Color(std::max(color.r, value), std::max(color.g, value), std::max(color.b, value),
+                                      255 - value / 2);
+                    rect.setFillColor(color);
+                }
+                else
+                {
+                    rect.setFillColor(rainColor);
+                }
                 // ReSharper disable once CppFunctionalStyleCast
                 rect.setPosition({float(pos.x) * (m_keySize + m_gapSize), begin});
                 target.draw(rect, states);

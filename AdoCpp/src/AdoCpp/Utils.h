@@ -88,7 +88,7 @@ namespace AdoCpp
         for (size_t i = 0; i < std::size(angles); ++i)
             if (angle == angles[i])
                 return paths[i];
-        throw std::invalid_argument("Invalid path");
+        throw std::invalid_argument("Invalid angle");
     }
 
 

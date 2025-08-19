@@ -28,10 +28,10 @@ public:
     void render();
 
     void createWindow();
+    void calcFps();
 
     sf::RenderWindow window;
     sf::Vector2u windowSize;
-    bool running;
     sf::Time deltaTime;
     float fps;
     float planetRadiusPx;

@@ -11,7 +11,7 @@
 #include "State.h"
 
 Game::Game() :
-    running(true), fps(), planetRadiusPx(50), arrFps(), avgFps(), minFps(), maxFps(), textFps(font), tileSystem(level),
+    fps(), planetRadiusPx(50), arrFps(), avgFps(), minFps(), maxFps(), textFps(font), tileSystem(level),
     autoplay(false), fullscreen(false)
 {
 #ifdef _WIN32
@@ -79,19 +79,7 @@ void Game::run()
     while (true)
     {
         deltaTime = deltaClock.restart();
-        fps = 1 / deltaTime.asSeconds(), avgFps = 0, minFps = INT_MAX, maxFps = 0;
-        for (size_t i = 0; i < arrFps.size(); i++)
-        {
-            if (i != arrFps.size() - 1)
-                arrFps[i] = arrFps[i + 1];
-            else
-                arrFps[i] = fps;
-            avgFps += arrFps[i];
-            minFps = std::min(minFps, arrFps[i]);
-            maxFps = std::max(maxFps, arrFps[i]);
-        }
-        avgFps /= static_cast<float>(arrFps.size());
-
+        calcFps();
         handleEvent();
         if (!window.isOpen())
             break;
@@ -172,4 +160,19 @@ void Game::createWindow()
     else
         windowSize = {800, 600},
         window.create(sf::VideoMode(windowSize), title, sf::Style::Default, sf::State::Windowed, settings);
+}
+void Game::calcFps()
+{
+    fps = 1 / deltaTime.asSeconds(), avgFps = 0, minFps = std::numeric_limits<float>::max(), maxFps = 0;
+    for (size_t i = 0; i < arrFps.size(); i++)
+    {
+        if (i != arrFps.size() - 1)
+            arrFps[i] = arrFps[i + 1];
+        else
+            arrFps[i] = fps;
+        avgFps += arrFps[i];
+        minFps = std::min(minFps, arrFps[i]);
+        maxFps = std::max(maxFps, arrFps[i]);
+    }
+    avgFps /= static_cast<float>(arrFps.size());
 }
