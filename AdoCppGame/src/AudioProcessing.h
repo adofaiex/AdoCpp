@@ -17,7 +17,7 @@ inline std::filesystem::path addHitsound(std::filesystem::path path, const std::
             continue;
         const bool midspin = k != tiles.size() - 1 && tiles[k + 1].angle.deg() == 999;
         const float hitVolume =
-            3.f * float(midspin ? tiles[k].midspinHitsoundVolume : tiles[k].hitsoundVolume) /
+            4.f * float(midspin ? tiles[k].midspinHitsoundVolume : tiles[k].hitsoundVolume) /
             100;
         float f = 1, val;
         for (size_t i = 0; i < hitSb.getSampleCount() / 4; i++)
@@ -58,6 +58,6 @@ inline std::filesystem::path addHitsound(std::filesystem::path path, const std::
     path.replace_extension().concat("-hitsound").concat(ext);
     if (!newSb.saveToFile(path))
         throw std::runtime_error("Failed to save sound.");
-    delete samples;
+    delete[] samples;
     return path;
 }
