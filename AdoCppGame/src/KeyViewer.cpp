@@ -55,16 +55,17 @@ KeyViewerSystem::KeyViewerSystem() :
 }
 
 std::vector<KeyViewerSystem::Key> KeyViewerSystem::getKeys() { return m_keys; }
-void KeyViewerSystem::setKeys(const std::vector<Key>& keys)
+KeyViewerSystem& KeyViewerSystem::setKeys(const std::vector<Key>& keys)
 {
     m_keys = keys;
     for (auto& key : keys)
     {
         m_keyPressed.try_emplace(key.scan, std::vector<Stamp>());
     }
+    return *this;
 }
 
-void KeyViewerSystem::setKeyLimiter(const std::vector<sf::Keyboard::Scan>& keyLimiter)
+KeyViewerSystem& KeyViewerSystem::setKeyLimiter(const std::vector<sf::Keyboard::Scan>& keyLimiter)
 {
     m_keys.clear();
     for (size_t i = 0; i < keyLimiter.size(); i++)
@@ -72,8 +73,9 @@ void KeyViewerSystem::setKeyLimiter(const std::vector<sf::Keyboard::Scan>& keyLi
         m_keys.push_back({keyLimiter[i], sf::Vector2u(i, 0)});
         m_keyPressed.try_emplace(keyLimiter[i], std::vector<Stamp>());
     }
+    return *this;
 }
-void KeyViewerSystem::setKeyLimiterAuto(const std::vector<sf::Keyboard::Scan>& keyLimiter)
+KeyViewerSystem& KeyViewerSystem::setKeyLimiterAuto(const std::vector<sf::Keyboard::Scan>& keyLimiter)
 {
     m_keys.clear();
     for (size_t i = 0; i < keyLimiter.size(); i++)
@@ -97,6 +99,7 @@ void KeyViewerSystem::setKeyLimiterAuto(const std::vector<sf::Keyboard::Scan>& k
         m_keys.push_back({keyLimiter[i], pos});
         m_keyPressed.try_emplace(keyLimiter[i], std::vector<Stamp>());
     }
+    return *this;
 }
 
 bool KeyViewerSystem::press(const sf::Keyboard::Scan scan, const std::optional<AdoCpp::HitMargin> hitMargin)
@@ -115,51 +118,84 @@ bool KeyViewerSystem::press(const sf::Keyboard::Scan scan, const std::optional<A
     return true; // keyboardChatterBlocker
 }
 
-void KeyViewerSystem::release(const sf::Keyboard::Scan scan)
+KeyViewerSystem& KeyViewerSystem::release(const sf::Keyboard::Scan scan)
 {
     const auto it = m_keyPressed.find(scan);
     if (it != m_keyPressed.end() && !it->second.empty() && it->second.back().press)
         it->second.push_back(Stamp(false, m_clock.getElapsedTime()));
+    return *this;
 }
 
-void KeyViewerSystem::setReleasedColor(const sf::Color releasedColor)
+KeyViewerSystem& KeyViewerSystem::setReleasedColor(const sf::Color releasedColor)
 {
     for (auto& key : m_keys)
         key.releasedColor = releasedColor;
+    return *this;
 }
 
-void KeyViewerSystem::setPressedColor(const sf::Color pressedColor)
+KeyViewerSystem& KeyViewerSystem::setPressedColor(const sf::Color pressedColor)
 {
     for (auto& key : m_keys)
         key.pressedColor = pressedColor;
+    return *this;
 }
 
-void KeyViewerSystem::setRainColor(const sf::Color rainColor)
+KeyViewerSystem& KeyViewerSystem::setRainColor(const sf::Color rainColor)
 {
     for (auto& key : m_keys)
         key.rainColor = rainColor;
+    return *this;
 }
 
-void KeyViewerSystem::setRainColorByRow(const sf::Color rainColor, unsigned int row)
+KeyViewerSystem& KeyViewerSystem::setRainColorByRow(const sf::Color rainColor, unsigned int row)
 {
     for (auto& key : m_keys)
         if (key.pos.y == row)
             key.rainColor = rainColor;
+    return *this;
 }
 bool KeyViewerSystem::getKeyShowHitError() const { return m_keyShowHitError; }
-void KeyViewerSystem::setKeyShowHitError(const bool flag) { m_keyShowHitError = flag; }
+KeyViewerSystem& KeyViewerSystem::setKeyShowHitError(const bool flag)
+{
+    m_keyShowHitError = flag;
+    return *this;
+}
 bool KeyViewerSystem::getRainShowHitError() const { return m_rainShowHitError; }
-void KeyViewerSystem::setRainShowHitError(const bool flag) { m_rainShowHitError = flag; }
+KeyViewerSystem& KeyViewerSystem::setRainShowHitError(const bool flag)
+{
+    m_rainShowHitError = flag;
+    return *this;
+}
 sf::Time KeyViewerSystem::getRainSpeed() const { return m_rainSpeed; }
-void KeyViewerSystem::setRainSpeed(const sf::Time rainSpeed) { m_rainSpeed = rainSpeed; }
+KeyViewerSystem& KeyViewerSystem::setRainSpeed(const sf::Time rainSpeed)
+{
+    m_rainSpeed = rainSpeed;
+    return *this;
+}
 float KeyViewerSystem::getRainLength() const { return m_rainLength; }
-void KeyViewerSystem::setRainLength(const float rainLength) { m_rainLength = rainLength; }
+KeyViewerSystem& KeyViewerSystem::setRainLength(const float rainLength)
+{
+    m_rainLength = rainLength;
+    return *this;
+}
 float KeyViewerSystem::getKeySize() const { return m_keySize; }
-void KeyViewerSystem::setKeySize(const float keySize) { m_keySize = keySize; }
+KeyViewerSystem& KeyViewerSystem::setKeySize(const float keySize)
+{
+    m_keySize = keySize;
+    return *this;
+}
 float KeyViewerSystem::getGapSize() const { return m_gapSize; }
-void KeyViewerSystem::setGapSize(const float gapSize) { m_gapSize = gapSize; }
+KeyViewerSystem& KeyViewerSystem::setGapSize(const float gapSize)
+{
+    m_gapSize = gapSize;
+    return *this;
+}
 float KeyViewerSystem::getRainKeyGapSize() const { return m_rainKeyGapSize; }
-void KeyViewerSystem::setRainKeyGapSize(const float rainKeyGapSize) { m_rainKeyGapSize = rainKeyGapSize; }
+KeyViewerSystem& KeyViewerSystem::setRainKeyGapSize(const float rainKeyGapSize)
+{
+    m_rainKeyGapSize = rainKeyGapSize;
+    return *this;
+}
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void KeyViewerSystem::update()

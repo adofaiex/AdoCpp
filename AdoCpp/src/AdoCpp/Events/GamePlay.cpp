@@ -23,8 +23,7 @@ namespace AdoCpp::Event::GamePlay
     std::unique_ptr<rapidjson::Value> SetSpeed::intoJson(rapidjson::Document::AllocatorType& alloc) const
     {
         auto val = std::make_unique<rapidjson::Value>(rapidjson::kObjectType);
-        val->AddMember("floor", floor, alloc);
-        val->AddMember("eventType", rapidjson::StringRef(name()), alloc);
+        val->AddMember("floor", floor, alloc).AddMember("eventType", rapidjson::StringRef(name()), alloc);
 
         if (speedType == SpeedType::Bpm)
             val->AddMember("speedType", "Bpm", alloc);
@@ -40,8 +39,7 @@ namespace AdoCpp::Event::GamePlay
     std::unique_ptr<rapidjson::Value> Twirl::intoJson(rapidjson::Document::AllocatorType& alloc) const
     {
         auto val = std::make_unique<rapidjson::Value>(rapidjson::kObjectType);
-        val->AddMember("floor", floor, alloc);
-        val->AddMember("eventType", rapidjson::StringRef(name()), alloc);
+        val->AddMember("floor", floor, alloc).AddMember("eventType", rapidjson::StringRef(name()), alloc);
         return val;
     }
     Pause::Pause(const rapidjson::Value& data) : StaticEvent(data)
@@ -70,8 +68,7 @@ namespace AdoCpp::Event::GamePlay
     std::unique_ptr<rapidjson::Value> Pause::intoJson(rapidjson::Document::AllocatorType& alloc) const
     {
         auto val = std::make_unique<rapidjson::Value>(rapidjson::kObjectType);
-        val->AddMember("floor", floor, alloc);
-        val->AddMember("eventType", rapidjson::StringRef(name()), alloc);
+        val->AddMember("floor", floor, alloc).AddMember("eventType", rapidjson::StringRef(name()), alloc);
         autoRemoveDecimalPart(*val, "duration", duration, alloc);
         autoRemoveDecimalPart(*val, "countdownTicks", countdownTicks, alloc);
         if (angleCorrectionDir == AngleCorrectionDir::None)
@@ -96,8 +93,7 @@ namespace AdoCpp::Event::GamePlay
     std::unique_ptr<rapidjson::Value> SetHitsound::intoJson(rapidjson::Document::AllocatorType& alloc) const
     {
         auto val = std::make_unique<rapidjson::Value>(rapidjson::kObjectType);
-        val->AddMember("floor", floor, alloc);
-        val->AddMember("eventType", rapidjson::StringRef(name()), alloc);
+        val->AddMember("floor", floor, alloc).AddMember("eventType", rapidjson::StringRef(name()), alloc);
 
         if (gameSound == GameSound::Hitsound)
             val->AddMember("gameSound", "Hitsound", alloc);
@@ -120,8 +116,7 @@ namespace AdoCpp::Event::GamePlay
     std::unique_ptr<rapidjson::Value> SetPlanetRotation::intoJson(rapidjson::Document::AllocatorType& alloc) const
     {
         auto val = std::make_unique<rapidjson::Value>(rapidjson::kObjectType);
-        val->AddMember("floor", floor, alloc);
-        val->AddMember("eventType", rapidjson::StringRef(name()), alloc);
+        val->AddMember("floor", floor, alloc).AddMember("eventType", rapidjson::StringRef(name()), alloc);
         if (!active)
             val->AddMember("active", active, alloc);
         val->AddMember("ease", rapidjson::StringRef(easing2cstr(ease)), alloc);

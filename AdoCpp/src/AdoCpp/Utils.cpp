@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <vector>
 
+#include "Math/Vector2.h"
+
 namespace AdoCpp
 {
     std::unique_ptr<rapidjson::Value> RelativeIndex::intoJson(rapidjson::Document::AllocatorType& alloc) const
@@ -77,5 +79,11 @@ namespace AdoCpp
             jsonValue.AddMember(rapidjson::StringRef(name), static_cast<int>(value), alloc);
         else
             jsonValue.AddMember(rapidjson::StringRef(name), value, alloc);
+    }
+    template <class T>
+    std::unique_ptr<rapidjson::Value> vector2ToJson(Vector2<T> vec2, rapidjson::Document::AllocatorType& alloc)
+    {
+        auto val = std::make_unique<rapidjson::Value>();
+
     }
 } // namespace AdoCpp

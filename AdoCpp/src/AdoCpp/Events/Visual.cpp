@@ -23,8 +23,7 @@ namespace AdoCpp::Event::Visual
     std::unique_ptr<rapidjson::Value> MoveCamera::intoJson(rapidjson::Document::AllocatorType& alloc) const
     {
         auto val = std::make_unique<rapidjson::Value>(rapidjson::kObjectType);
-        val->AddMember("floor", floor, alloc);
-        val->AddMember("eventType", rapidjson::StringRef(name()), alloc);
+        val->AddMember("floor", floor, alloc).AddMember("eventType", rapidjson::StringRef(name()), alloc);
         if (!active)
             val->AddMember("active", active, alloc);
         autoRemoveDecimalPart(*val, "duration", duration, alloc);

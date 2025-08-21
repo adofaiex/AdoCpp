@@ -1,18 +1,21 @@
 #pragma once
 
+#ifndef RAPIDJSON_HAS_STDSTRING
+#define RAPIDJSON_HAS_STDSTRING 1
+#endif
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <list>
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
 #include <rapidjson/istreamwrapper.h>
 #include <vector>
-#include <list>
 
 #include "Event.h"
 #include "Math/Vector2.h"
-#include "Utils.h"
 #include "Tile.h"
+#include "Utils.h"
 
 namespace AdoCpp
 {

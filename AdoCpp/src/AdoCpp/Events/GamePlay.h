@@ -1,5 +1,4 @@
 #pragma once
-#include <rapidjson/document.h>
 #include "AdoCpp/Easing.h"
 #include "AdoCpp/Tile.h"
 #include "Base.h"

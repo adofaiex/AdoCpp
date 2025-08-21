@@ -1,6 +1,5 @@
 #pragma once
 #include <AdoCpp.h>
-#include <rapidjson/document.h>
 #include "SFML/Window.hpp"
 struct Config
 {

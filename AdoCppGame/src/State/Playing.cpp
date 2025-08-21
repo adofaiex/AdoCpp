@@ -19,18 +19,17 @@ void StatePlaying::init(Game* _game)
     hitTextSystem.hidePerfects = game->config.hidePerfects;
     hitErrorMeterSystem.setScale({4, 4});
     hitErrorMeterSystem.clear();
-    keyViewerSystem.setKeyLimiterAuto(game->config.keyLimiter);
-    keyViewerSystem.setRainSpeed(game->config.rainSpeed);
-    keyViewerSystem.setRainLength(game->config.rainLength);
-    keyViewerSystem.setKeySize(game->config.keySize);
-    keyViewerSystem.setGapSize(game->config.gapSize);
-    keyViewerSystem.setRainKeyGapSize(game->config.rainKeyGapSize);
-    keyViewerSystem.setKeyShowHitError(game->config.keyShowHitError);
-    keyViewerSystem.setRainShowHitError(game->config.rainShowHitError);
-    // keyViewerSystem.setScale({6, 6});
-    keyViewerSystem.setReleasedColor({255, 100, 100, 63});
-    keyViewerSystem.setRainColorByRow({255, 100, 100, 255}, 0);
-    keyViewerSystem.setRainColorByRow({255, 255, 255, 191}, 1);
+    keyViewerSystem.setKeyLimiterAuto(game->config.keyLimiter)
+        .setRainSpeed(game->config.rainSpeed)
+        .setRainLength(game->config.rainLength)
+        .setKeySize(game->config.keySize)
+        .setGapSize(game->config.gapSize)
+        .setRainKeyGapSize(game->config.rainKeyGapSize)
+        .setKeyShowHitError(game->config.keyShowHitError)
+        .setRainShowHitError(game->config.rainShowHitError)
+        .setReleasedColor({255, 100, 100, 63})
+        .setRainColorByRow({255, 100, 100, 255}, 0)
+        .setRainColorByRow({255, 255, 255, 191}, 1);
 
     game->tileSystem.setActiveTileIndex(std::nullopt);
 
@@ -272,7 +271,11 @@ void StatePlaying::update()
     else
     {
         const auto pos = tiles[playerTileIndex].pos.o;
-        planet1.setPosition({float(pos.x), float(pos.y)});
+
+        if (AdoCpp::Level::isFirePlanetStatic(playerTileIndex))
+            planet1.setPosition({float(pos.x), float(pos.y)});
+        else
+            planet2.setPosition({float(pos.x), float(pos.y)});
     }
 
     // Update Systems
@@ -335,8 +338,9 @@ void StatePlaying::render()
 
     game->window.draw(game->tileSystem);
 
-    game->window.draw(planet1);
-    if (!waiting)
+    if (!waiting || AdoCpp::Level::isFirePlanetStatic(playerTileIndex))
+        game->window.draw(planet1);
+    if (!waiting || !AdoCpp::Level::isFirePlanetStatic(playerTileIndex))
         game->window.draw(planet2);
 
     game->window.draw(hitTextSystem);
@@ -371,13 +375,9 @@ void StatePlaying::render()
                     ve = hitCounts[(int)VeryEarly], vl = hitCounts[(int)VeryLate], te = hitCounts[(int)TooEarly],
                     tl = hitCounts[(int)TooLate];
         const float all = p + ep + lp + ve + vl + tl + te + tl;
-        const float acc = all + te + tl == 0
-            ? 1
-            : (p + ep + lp) / (all + te + tl) + p * 0.0001f;
+        const float acc = all + te + tl == 0 ? 1 : (p + ep + lp) / (all + te + tl) + p * 0.0001f;
         ImGui::Text("Acc: %.2f%%", acc * 100);
-        const float xacc = all == 0
-            ? 1
-            : (p + (ep + lp) * 0.75f + (ve + vl) * 0.4f + te * 0.2f) / all;
+        const float xacc = all == 0 ? 1 : (p + (ep + lp) * 0.75f + (ve + vl) * 0.4f + te * 0.2f) / all;
         ImGui::Text("X-Acc: %.2f%%", xacc * 100);
     }
     ImGui::End();

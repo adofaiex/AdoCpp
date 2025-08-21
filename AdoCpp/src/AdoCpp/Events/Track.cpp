@@ -24,8 +24,7 @@ namespace AdoCpp::Event::Track
     std::unique_ptr<rapidjson::Value> ColorTrack::intoJson(rapidjson::Document::AllocatorType& alloc) const
     {
         auto val = std::make_unique<rapidjson::Value>(rapidjson::kObjectType);
-        val->AddMember("floor", floor, alloc);
-        val->AddMember("eventType", rapidjson::StringRef(name()), alloc);
+        val->AddMember("floor", floor, alloc).AddMember("eventType", rapidjson::StringRef(name()), alloc);
         if (!active)
             val->AddMember("active", active, alloc);
         rapidjson::Value trackColorValue;
@@ -69,8 +68,7 @@ namespace AdoCpp::Event::Track
     std::unique_ptr<rapidjson::Value> PositionTrack::intoJson(rapidjson::Document::AllocatorType& alloc) const
     {
         auto val = std::make_unique<rapidjson::Value>(rapidjson::kObjectType);
-        val->AddMember("floor", floor, alloc);
-        val->AddMember("eventType", rapidjson::StringRef(name()), alloc);
+        val->AddMember("floor", floor, alloc).AddMember("eventType", rapidjson::StringRef(name()), alloc);
         if (!active)
             val->AddMember("active", active, alloc);
         {
@@ -130,8 +128,7 @@ namespace AdoCpp::Event::Track
     std::unique_ptr<rapidjson::Value> MoveTrack::intoJson(rapidjson::Document::AllocatorType& alloc) const
     {
         auto val = std::make_unique<rapidjson::Value>(rapidjson::kObjectType);
-        val->AddMember("floor", floor, alloc);
-        val->AddMember("eventType", rapidjson::StringRef(name()), alloc);
+        val->AddMember("floor", floor, alloc).AddMember("eventType", rapidjson::StringRef(name()), alloc);
         if (!active)
             val->AddMember("active", active, alloc);
         val->AddMember("startTile", *startTile.intoJson(alloc), alloc);
@@ -163,8 +160,7 @@ namespace AdoCpp::Event::Track
     std::unique_ptr<rapidjson::Value> AnimateTrack::intoJson(rapidjson::Document::AllocatorType& alloc) const
     {
         auto val = std::make_unique<rapidjson::Value>(rapidjson::kObjectType);
-        val->AddMember("floor", floor, alloc);
-        val->AddMember("eventType", rapidjson::StringRef(name()), alloc);
+        val->AddMember("floor", floor, alloc).AddMember("eventType", rapidjson::StringRef(name()), alloc);
         if (!active)
             val->AddMember("active", active, alloc);
         if (trackAnimation)
@@ -199,8 +195,7 @@ namespace AdoCpp::Event::Track
     std::unique_ptr<rapidjson::Value> RecolorTrack::intoJson(rapidjson::Document::AllocatorType& alloc) const
     {
         auto val = std::make_unique<rapidjson::Value>(rapidjson::kObjectType);
-        val->AddMember("floor", floor, alloc);
-        val->AddMember("eventType", rapidjson::StringRef(name()), alloc);
+        val->AddMember("floor", floor, alloc).AddMember("eventType", rapidjson::StringRef(name()), alloc);
         if (!active)
             val->AddMember("active", active, alloc);
         val->AddMember("startTile", *startTile.intoJson(alloc), alloc);

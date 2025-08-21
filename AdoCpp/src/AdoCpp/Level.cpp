@@ -6,10 +6,10 @@
 #include <iostream>
 #include <optional>
 #include <ranges>
+#include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
 
 #include "Utils.h"
-#include "rapidjson/document.h"
 
 constexpr double positiveRemainder(const double a, const double b)
 {
@@ -73,57 +73,38 @@ namespace AdoCpp
     Settings::intoJson(rapidjson::Document::AllocatorType& alloc) const
     {
         auto val = std::make_unique<rapidjson::Value>(rapidjson::kObjectType);
-        val->AddMember("version", 15, alloc);
-        rapidjson::Value vArtist;
-        vArtist.SetString(artist.c_str(), artist.length(), alloc);
-        val->AddMember("artist", vArtist, alloc);
-        rapidjson::Value vSong;
-        vSong.SetString(artist.c_str(), artist.length(), alloc);
-        val->AddMember("song", vSong, alloc);
-        rapidjson::Value vAuthor;
-        vAuthor.SetString(author.c_str(), author.length(), alloc);
-        val->AddMember("author", vAuthor, alloc);
-        val->AddMember("separateCountdownTime", separateCountdownTime, alloc);
-        val->AddMember("countdownTicks", countdownTicks, alloc);
-        rapidjson::Value vSongFilename;
-        vSongFilename.SetString(songFilename.c_str(), songFilename.length(), alloc);
-        val->AddMember("songFilename", vSongFilename, alloc);
-        val->AddMember("bpm", bpm, alloc);
-        val->AddMember("volume", volume, alloc);
-        val->AddMember("offset", offset, alloc);
-        val->AddMember("pitch", pitch, alloc);
-        val->AddMember("hitsound", rapidjson::StringRef(hitsound2cstr(hitsound)), alloc);
-        val->AddMember("hitsoundVolume", hitsoundVolume, alloc);
-        val->AddMember("trackColorType", rapidjson::StringRef(trackColorType2cstr(trackColorType)), alloc);
-        rapidjson::Value vTrackColor;
-        std::string sTrackColor = trackColor.toString(false, false, Color::ToStringAlphaMode::Auto);
-        vTrackColor.SetString(sTrackColor.c_str(), sTrackColor.length(), alloc);
-        val->AddMember("trackColor", vTrackColor, alloc);
-        rapidjson::Value vSSTC;
-        std::string sSSTC = trackColor.toString(false, false, Color::ToStringAlphaMode::Auto);
-        vSSTC.SetString(sSSTC.c_str(), sSSTC.length(), alloc);
-        val->AddMember("secondaryTrackColor", vSSTC, alloc);
-        val->AddMember("trackColorAnimDuration", trackColorAnimDuration, alloc);
-        val->AddMember("trackColorPulse", rapidjson::StringRef(trackColorPulse2cstr(trackColorPulse)), alloc);
-        val->AddMember("trackPulseLength", trackPulseLength, alloc);
-        val->AddMember("trackStyle", rapidjson::StringRef(trackStyle2cstr(trackStyle)), alloc);
-        val->AddMember("trackAnimation", rapidjson::StringRef(trackAnimation2cstr(trackAnimation)), alloc);
-        val->AddMember("beatsAhead", beatsAhead, alloc);
-        val->AddMember("trackDisappearAnimation",
-                      rapidjson::StringRef(trackDisappearAnimation2cstr(trackDisappearAnimation)), alloc);
-        val->AddMember("beatsBehind", beatsBehind, alloc);
-        rapidjson::Value vBGC;
-        std::string sBGC = backgroundColor.toString(false, false, Color::ToStringAlphaMode::Auto);
-        vBGC.SetString(sBGC.c_str(), sBGC.length(), alloc);
-        val->AddMember("backgroundColor", vBGC, alloc);
-        val->AddMember("stickToFloors", stickToFloors, alloc);
+        val->AddMember("version", 15, alloc)
+            .AddMember("artist", artist, alloc)
+            .AddMember("song", song, alloc)
+            .AddMember("author", author, alloc)
+            .AddMember("separateCountdownTime", separateCountdownTime, alloc)
+            .AddMember("countdownTicks", countdownTicks, alloc)
+            .AddMember("songFilename", songFilename, alloc)
+            .AddMember("bpm", bpm, alloc)
+            .AddMember("volume", volume, alloc)
+            .AddMember("offset", offset, alloc)
+            .AddMember("pitch", pitch, alloc)
+            .AddMember("hitsound", rapidjson::StringRef(hitsound2cstr(hitsound)), alloc)
+            .AddMember("hitsoundVolume", hitsoundVolume, alloc)
+            .AddMember("trackColorType", rapidjson::StringRef(trackColorType2cstr(trackColorType)), alloc)
+            .AddMember("trackColor", trackColor.toString(false, false, Color::ToStringAlphaMode::Auto), alloc)
+            .AddMember("secondaryTrackColor", trackColor.toString(false, false, Color::ToStringAlphaMode::Auto), alloc)
+            .AddMember("trackColorAnimDuration", trackColorAnimDuration, alloc)
+            .AddMember("trackColorPulse", rapidjson::StringRef(trackColorPulse2cstr(trackColorPulse)), alloc)
+            .AddMember("trackPulseLength", trackPulseLength, alloc)
+            .AddMember("trackStyle", rapidjson::StringRef(trackStyle2cstr(trackStyle)), alloc)
+            .AddMember("trackAnimation", rapidjson::StringRef(trackAnimation2cstr(trackAnimation)), alloc)
+            .AddMember("beatsAhead", beatsAhead, alloc)
+            .AddMember("trackDisappearAnimation",
+                       rapidjson::StringRef(trackDisappearAnimation2cstr(trackDisappearAnimation)), alloc)
+            .AddMember("beatsBehind", beatsBehind, alloc)
+            .AddMember("backgroundColor", backgroundColor.toString(false, false, Color::ToStringAlphaMode::Auto), alloc)
+            .AddMember("stickToFloors", stickToFloors, alloc);
         // val->AddMember("unscaledSize", unscaledSize, alloc);
         val->AddMember("relativeTo", rapidjson::StringRef(relativeToCamera2cstr(relativeTo)), alloc);
         rapidjson::Value vPos(rapidjson::kArrayType);
         vPos.PushBack(position.x, alloc), vPos.PushBack(position.y, alloc);
-        val->AddMember("position", vPos, alloc);
-        val->AddMember("rotation", rotation, alloc);
-        val->AddMember("zoom", zoom, alloc);
+        val->AddMember("position", vPos, alloc).AddMember("rotation", rotation, alloc).AddMember("zoom", zoom, alloc);
         return val;
     }
     std::unique_ptr<rapidjson::Document> Settings::intoJson() const
