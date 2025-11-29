@@ -48,6 +48,7 @@ public:
     sf::Music music;
 
     AdoCpp::Level level;
+    AdoCpp::Camera camera;
     std::filesystem::path levelPath, musicPath, origMusicPath;
 
     TileSystem tileSystem;

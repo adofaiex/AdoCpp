@@ -148,7 +148,6 @@ namespace AdoCpp
         settings = Settings();
         tiles.clear();
         m_processedDynamicEvents.clear();
-        m_moveCameraDatas.clear();
         m_setSpeeds.clear();
         m_speedData.clear();
     }
@@ -648,168 +647,11 @@ namespace AdoCpp
     //         m_camera.player = targetPos;
     // }
 
-    void Level::initCamera()
-    {
-        assert(parsed && "AdoCpp::Level class is not parsed");
-        m_camera = Camera();
-        m_moveCameraDatas.clear();
-        double rotEndSec, zoomEndSec, xEndSec, yEndSec,
-            relEndSec = xEndSec = yEndSec = rotEndSec = zoomEndSec = std::numeric_limits<double>::infinity();
-        m_moveCameraDatas.emplace_back(0, 0, -settings.countdownTicks,
-                                       -settings.countdownTicks * bpm2crotchet(settings.bpm), 0.0, settings.relativeTo,
-                                       false, relEndSec, Vector2lf(), OptionalPoint(), xEndSec, yEndSec,
-                                       settings.rotation, rotEndSec, settings.zoom, zoomEndSec, Easing::Linear);
-        for (const auto& m_processedDynamicEvent : std::ranges::reverse_view(m_processedDynamicEvents))
-        {
-            const auto mc = std::dynamic_pointer_cast<Event::Visual::MoveCamera>(m_processedDynamicEvent);
-            if (mc == nullptr)
-                continue;
-            m_moveCameraDatas.emplace(m_moveCameraDatas.begin() + 1, mc->floor, mc->angleOffset, mc->beat, mc->seconds,
-                                      mc->duration, mc->relativeTo, false, 114514, Vector2lf(), mc->position, xEndSec,
-                                      yEndSec, mc->rotation, rotEndSec, mc->zoom, zoomEndSec, mc->ease);
-            if (mc->relativeTo)
-            {
-                // relEndSec = mc->seconds; // i hate this line
-                if (*mc->relativeTo == RelativeToCamera::LastPosition)
-                    xEndSec = yEndSec = mc->seconds;
-            }
-            if (mc->position.first)
-                xEndSec = mc->seconds;
-            if (mc->position.second)
-                yEndSec = mc->seconds;
-            if (mc->rotation)
-                rotEndSec = mc->seconds;
-            if (mc->zoom)
-                zoomEndSec = mc->seconds;
-        }
-        RelativeToCamera lastRel = settings.relativeTo;
-        for (auto it = m_moveCameraDatas.begin() + 1; it != m_moveCameraDatas.end(); ++it)
-        {
-            it->duplicatedRelPlayer =
-                lastRel == RelativeToCamera::Player && (!it->relativeTo.has_value() || *it->relativeTo == lastRel);
-            if (!it->duplicatedRelPlayer && it->relativeTo.has_value())
-                lastRel = *it->relativeTo;
-        }
-        for (auto& m_moveCameraData : std::ranges::reverse_view(m_moveCameraDatas))
-        {
-            m_moveCameraData.relEndSec = relEndSec;
-            if (!m_moveCameraData.duplicatedRelPlayer)
-                relEndSec = m_moveCameraData.seconds;
-        }
-    }
-
-    void Level::updateCamera(const double seconds, const size_t floor) // FIXME
-    {
-        assert(parsed && "AdoCpp::Level class is not parsed");
-        Vector2lf pos, posOff;
-        double rot{}, zoom{};
-        for (auto& data : m_moveCameraDatas)
-        {
-            const double bpm = getBpmForDynamicEvent(data.floor, data.angleOffset), spb = bpm2crotchet(bpm);
-            if (seconds < data.seconds)
-                break;
-
-            auto calcX = [&seconds, &data, &spb](const double endSec)
-            { return data.duration != 0.0 ? (std::min(seconds, endSec) - data.seconds) / spb / data.duration : 1.0; };
-
-            if (data.relativeTo && !data.duplicatedRelPlayer)
-            {
-                const double x = calcX(data.relEndSec), y = ease(data.ease, x);
-                using enum RelativeToCamera;
-                switch (*data.relativeTo)
-                {
-                case Player:
-                    {
-                        if (seconds > data.relEndSec)
-                        {
-                            pos = data.playerLastPos;
-                            break;
-                        }
-
-                        const double delta = std::isinf(m_camera.lastSeconds) ? 0 : seconds - m_camera.lastSeconds;
-                        if (!std::isnormal(delta) && delta != 0)
-                            throw std::logic_error(
-                                "Delta (seconds - m_camera.lastSeconds) is not normal and is not zero");
-                        const Vector2lf& targetPos = tiles[floor].pos.o;
-                        if (floor != m_camera.lastFloor)
-                            m_camera.lastFloor = floor, m_camera.lastChangedPos = m_camera.player;
-                        const double gapDis = (targetPos - m_camera.lastChangedPos).length(),
-                                     speed = gapDis * getBpmBySeconds(seconds) / 60.0 / 2.0;
-                        if (targetPos != m_camera.player)
-                        {
-                            const Vector2lf v = targetPos - m_camera.player;
-                            if (const Vector2lf n = v.normalized() * delta * speed;
-                                (m_camera.player - targetPos).lengthSquared() > n.lengthSquared())
-                                m_camera.player += n;
-                            else
-                                m_camera.player = targetPos;
-                        }
-
-                        pos += (m_camera.player - pos) * y;
-                        data.playerLastPos = pos;
-                        break;
-                    }
-                case Tile:
-                    pos += (tiles[data.floor].pos.o - pos) * y;
-                    if (seconds <= data.relEndSec)
-                        m_camera.player = pos;
-                    break;
-                case Global:
-                    // pos += (Vector2lf(0, 0) - pos) * y;
-                    // pos += -pos * y;
-                    pos *= (1 - y);
-                    if (seconds <= data.relEndSec)
-                        m_camera.player = pos;
-                    break;
-                case LastPosition:
-                    pos += posOff;
-                    posOff = Vector2lf(0, 0);
-                    if (seconds <= data.relEndSec)
-                        m_camera.player = pos;
-                    break;
-                }
-            }
-
-            if (data.position.first)
-            {
-                const double x = calcX(data.xEndSec), y = ease(data.ease, x);
-                posOff.x += (*data.position.first - posOff.x) * y;
-            }
-            if (data.position.second)
-            {
-                const double x = calcX(data.yEndSec), y = ease(data.ease, x);
-                posOff.y += (*data.position.second - posOff.y) * y;
-            }
-            if (data.rotation)
-            {
-                const double x = calcX(data.rotEndSec), y = ease(data.ease, x);
-                rot += (*data.rotation - rot) * y;
-            }
-            if (data.zoom)
-            {
-                const double x = calcX(data.zoomEndSec), y = ease(data.ease, x);
-                zoom += (*data.zoom - zoom) * y;
-            }
-        }
-        m_camera.position = pos + posOff;
-        m_camera.rotation = rot;
-        m_camera.zoom = zoom;
-        m_camera.lastSeconds = seconds;
-    }
-    bool Level::disableAnimateTrack() const { return m_disableAnimateTrack; }
-    void Level::disableAnimateTrack(const bool disable)
-    {
-        if (m_disableAnimateTrack != disable)
-            parsed = false;
-        m_disableAnimateTrack = disable;
-    }
-
     double Level::getTiming(const size_t floor, const double seconds) const
     {
         assert(parsed && "AdoCpp::Level class is not parsed");
         return seconds - tiles[floor].seconds;
     }
-
     Level::TimingBoundary Level::getTimingBoundary(const size_t floor, const Difficulty difficulty) const
     {
         assert(parsed && "AdoCpp::Level class is not parsed");
@@ -853,12 +695,15 @@ namespace AdoCpp
             return HitMargin::VeryEarly;
         return HitMargin::TooEarly;
     }
+
     bool Level::isParsed() const noexcept { return parsed; }
 
-    Level::CameraValue Level::cameraValue() const
+    bool Level::disableAnimateTrack() const { return m_disableAnimateTrack; }
+    void Level::disableAnimateTrack(const bool disable)
     {
-        assert(parsed && "AdoCpp::Level class is not parsed");
-        return {m_camera.position, m_camera.rotation, m_camera.zoom};
+        if (m_disableAnimateTrack != disable)
+            parsed = false;
+        m_disableAnimateTrack = disable;
     }
 
     void Level::parseTiles(const size_t beginFloor)
@@ -1045,13 +890,8 @@ namespace AdoCpp
         }
         m_speedData.clear();
         double bpm = settings.bpm, lastBeat = 0, deltaBeat = 0, seconds = settings.offset / 1000;
-        m_speedData.push_back({
-            -std::numeric_limits<double>::infinity(),
-            -std::numeric_limits<double>::infinity(),
-            bpm,
-            0,
-            0
-        });
+        m_speedData.push_back(
+            {-std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity(), bpm, 0, 0});
         for (const auto& setSpeed : m_setSpeeds)
         {
             deltaBeat = setSpeed->beat - lastBeat;
@@ -1367,6 +1207,7 @@ namespace AdoCpp
         case TrackColorType::Volume: // TODO
             {
                 tile.color = static_cast<int>(x * 4 /*?*/) % 2 == 0 ? tile.trackColor.c : tile.secondaryTrackColor.c;
+                break;
             }
         default:
             tile.color = tile.trackColor.c;

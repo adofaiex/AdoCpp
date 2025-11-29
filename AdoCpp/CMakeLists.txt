@@ -22,6 +22,8 @@ add_library(
         src/AdoCpp/Math/Vector2.cpp
         src/AdoCpp/Math/Angle.h
         src/AdoCpp/Math/Angle.inl
+        src/AdoCpp/Camera.h
+        src/AdoCpp/Camera.cpp
 )
 target_include_directories(AdoCpp PRIVATE src/)
 target_link_libraries(AdoCpp PRIVATE rapidjson::rapidjson)

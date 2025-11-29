@@ -132,7 +132,7 @@ void StateCharting::handleEvent(const sf::Event event)
             if (keyPressed->code == F12)
                 game->autoplay = !game->autoplay;
             else if (keyPressed->code == Space)
-                game->level.initCamera(), game->pushState(StatePlaying::instance());
+                game->camera.init(game->level), game->pushState(StatePlaying::instance());
             else if (keyPressed->code == Grave)
                 game->pushState(LiveCharting::instance());
         }

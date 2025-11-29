@@ -390,31 +390,7 @@ namespace AdoCpp
          */
         [[nodiscard]] bool isParsed() const noexcept;
 
-        struct CameraValue
-        {
-            Vector2lf position;
-            double rotation{};
-            double zoom{};
-        };
-
-        /**
-         * @brief Get the camera info at present.
-         * @return The camera info.
-         */
-        [[nodiscard]] CameraValue cameraValue() const;
-
-        /**
-         * @brief Init the camera.
-         */
-        void initCamera();
-        /**
-         * @brief Update the camera.
-         * @param seconds The seconds.
-         * @param floor The floor planet lands on.
-         */
-        void updateCamera(double seconds, size_t floor);
-
-        bool disableAnimateTrack() const;
+        [[nodiscard]] bool disableAnimateTrack() const;
         void disableAnimateTrack(bool disable);
 
         /**
@@ -449,27 +425,6 @@ namespace AdoCpp
         void updateTileColor(double seconds, size_t i);
         void updateTilePos(double seconds, size_t i);
 
-        struct MoveCameraData
-        {
-            size_t floor;
-            double angleOffset;
-            double beat;
-            double seconds;
-            double duration;
-            std::optional<RelativeToCamera> relativeTo;
-            bool duplicatedRelPlayer;
-            double relEndSec;
-            Vector2lf playerLastPos;
-            OptionalPoint position;
-            double xEndSec;
-            double yEndSec;
-            std::optional<double> rotation;
-            double rotEndSec;
-            std::optional<double> zoom;
-            double zoomEndSec;
-            Easing ease;
-        };
-
         std::list<std::shared_ptr<Event::DynamicEvent>> m_processedDynamicEvents;
         std::vector<std::shared_ptr<Event::GamePlay::SetSpeed>> m_setSpeeds;
         // y = kx + b
@@ -484,18 +439,7 @@ namespace AdoCpp
             double angleOffset;
         };
         std::vector<SpeedData> m_speedData;
-        std::vector<MoveCameraData> m_moveCameraDatas;
 
-        struct Camera
-        {
-            Vector2lf position;
-            double rotation{};
-            double zoom = 100;
-            Vector2lf player;
-            double lastSeconds = std::numeric_limits<double>::min();
-            size_t lastFloor{};
-            Vector2lf lastChangedPos;
-            size_t lastEventIndex{};
-        } m_camera;
+        friend class Camera;
     };
 } // namespace AdoCpp

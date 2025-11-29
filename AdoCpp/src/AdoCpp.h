@@ -14,6 +14,7 @@
 #include "AdoCpp/Easing.h"
 #include "AdoCpp/Event.h"
 #include "AdoCpp/Level.h"
+#include "AdoCpp/Camera.h"
 #include "AdoCpp/Utils.h"
 
 /**

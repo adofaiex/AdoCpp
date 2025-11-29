@@ -287,8 +287,9 @@ void StatePlaying::update()
     keyViewerSystem.setPosition({50.f, float(game->windowSize.y) - 500});
 
     // Update the camera
-    game->level.updateCamera(seconds, playerTileIndex);
-    const auto [pos, rot, zoom] = game->level.cameraValue();
+    game->camera.update(game->level, seconds, playerTileIndex);
+    const auto pos = game->camera.position;
+    const auto rot = game->camera.rotation, zoom = game->camera.zoom;
     game->view.setCenter({float(pos.x), float(pos.y)});
     game->view.setRotation(sf::degrees(float(rot)));
     const auto w = float(game->windowSize.x), h = float(game->windowSize.y);
