@@ -303,10 +303,14 @@ namespace AdoCpp
          */
         [[nodiscard]] size_t getFloorBySeconds(double seconds) const;
 
+        template <class Val, class Pred>
+        auto speedDataUpperBound(Val val, Pred pred) const;
+
         /**
          * @brief Get the bpm.
          * @param func The bool function.
          * @return The bpm.
+         * @deprecated O(n) algorithm. Use speedDataUpperBound() instead.
          */
         [[nodiscard]] double getBpm(const std::function<bool(const Event::GamePlay::SetSpeed&)>& func) const;
 
@@ -468,6 +472,18 @@ namespace AdoCpp
 
         std::list<std::shared_ptr<Event::DynamicEvent>> m_processedDynamicEvents;
         std::vector<std::shared_ptr<Event::GamePlay::SetSpeed>> m_setSpeeds;
+        // y = kx + b
+        // (x, y, k)
+        struct SpeedData
+        {
+            double beat;
+            double seconds;
+            double bpm;
+
+            size_t floor;
+            double angleOffset;
+        };
+        std::vector<SpeedData> m_speedData;
         std::vector<MoveCameraData> m_moveCameraDatas;
 
         struct Camera

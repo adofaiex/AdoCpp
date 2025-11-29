@@ -150,6 +150,7 @@ namespace AdoCpp
         m_processedDynamicEvents.clear();
         m_moveCameraDatas.clear();
         m_setSpeeds.clear();
+        m_speedData.clear();
     }
 
     void Level::defaultLevel()
@@ -438,12 +439,25 @@ namespace AdoCpp
         }
         unreachable();
     }
+
+    template <class Val, class Pred>
+    auto Level::speedDataUpperBound(Val val, Pred pred) const
+    {
+        return std::upper_bound(m_speedData.begin(), m_speedData.end(), val, pred);
+    }
+
     double Level::getPlanetsDir(const size_t floor, const double seconds) const
     {
         assert(parsed && "AdoCpp::Level class is not parsed");
-        const double bpm = getBpm([&floor, &seconds](const Event::GamePlay::SetSpeed& ss)
-                                  { return ss.floor <= floor && ss.seconds <= seconds; }),
-                     spb = bpm2crotchet(bpm);
+        auto it = speedDataUpperBound(114514.0, [&](const double& _nonsense, const SpeedData& sd)
+        {
+            return floor < sd.floor && seconds < sd.seconds;
+        });
+        if (it != m_speedData.begin()) --it;
+        const double bpm = it->bpm, spb = bpm2crotchet(bpm);
+        // const double bpm = getBpm([&floor, &seconds](const Event::GamePlay::SetSpeed& ss)
+        //                           { return ss.floor <= floor && ss.seconds <= seconds; }),
+        //              spb = bpm2crotchet(bpm);
         double angle;
         if (floor == 0)
         {
@@ -504,64 +518,79 @@ namespace AdoCpp
     }
     double Level::getBpmByBeat(const double beat) const
     {
-        return getBpm([&](const Event::GamePlay::SetSpeed& ss) { return beat >= ss.beat; });
+        assert(parsed && "AdoCpp::Level class is not parsed");
+        auto it = speedDataUpperBound(beat, [](const double& beat, const SpeedData& sd)
+        {
+            return beat < sd.beat;
+        });
+        if (it != m_speedData.begin()) --it;
+        return it->bpm;
+        // return getBpm([&](const Event::GamePlay::SetSpeed& ss) { return beat >= ss.beat; });
     }
     double Level::getBpmBySeconds(const double seconds) const
     {
-        return getBpm([&](const Event::GamePlay::SetSpeed& ss) { return seconds >= ss.seconds; });
+        assert(parsed && "AdoCpp::Level class is not parsed");
+        auto it = speedDataUpperBound(seconds, [](const double& seconds, const SpeedData& sd)
+        {
+            return seconds < sd.seconds;
+        });
+        if (it != m_speedData.begin()) --it;
+        return it->bpm;
+        // return getBpm([&](const Event::GamePlay::SetSpeed& ss) { return seconds >= ss.seconds; });
     }
     double Level::getBpmExcludingBeat(const double beat) const
     {
-        return getBpm([&](const Event::GamePlay::SetSpeed& ss) { return beat > ss.beat; });
+        assert(parsed && "AdoCpp::Level class is not parsed");
+        auto it = std::lower_bound(m_speedData.begin(), m_speedData.end(), beat, [](const SpeedData& sd, const double& beat)
+        {
+            return sd.beat < beat;
+        });
+        if (it != m_speedData.begin()) --it;
+        return it->bpm;
+        // return getBpm([&](const Event::GamePlay::SetSpeed& ss) { return beat > ss.beat; });
     }
     double Level::getBpmForDynamicEvent(const size_t floor, const double angleOffset) const
     {
-        return getBpm([&](const Event::GamePlay::SetSpeed& ss)
-                      { return floor > ss.floor || (floor == ss.floor && angleOffset >= ss.angleOffset); });
+        assert(parsed && "AdoCpp::Level class is not parsed");
+        auto it = speedDataUpperBound(114514.0, [&](const double& _nonsense, const SpeedData& sd)
+        {
+            return floor < sd.floor || (floor == sd.floor && angleOffset < sd.angleOffset);
+        });
+        if (it != m_speedData.begin()) --it;
+        return it->bpm;
+        // return getBpm([&](const Event::GamePlay::SetSpeed& ss)
+        //               { return floor > ss.floor || (floor == ss.floor && angleOffset >= ss.angleOffset); });
     }
     double Level::beat2seconds(const double beat) const
     {
         assert(parsed && "AdoCpp::Level class is not parsed");
-        double bpm = settings.bpm, b = 0, seconds = settings.offset / 1000;
-        for (const auto& setSpeed : m_setSpeeds)
+        auto it = speedDataUpperBound(beat, [](const double& beat, const SpeedData& sd)
         {
-            seconds += bpm2crotchet(bpm) * (std::min(beat, setSpeed->beat) - b);
-            b = setSpeed->beat;
-            if (setSpeed->speedType == Event::GamePlay::SetSpeed::SpeedType::Bpm)
-                bpm = setSpeed->beatsPerMinute;
-            else
-                bpm *= setSpeed->bpmMultiplier;
-            if (beat <= setSpeed->beat)
-                return seconds;
-        }
-        seconds += bpm2crotchet(bpm) * (beat - b);
-        return seconds;
+            return beat < sd.beat;
+        });
+        if (it != m_speedData.begin()) --it;
+        auto [sdBeat, sdSeconds, sdBpm, sdFloor, sdAngleOffset] = *it;
+        if (isinf(sdBeat))
+            sdBeat = 0, sdSeconds = settings.offset / 1000;
+        const double deltaBeat = (beat - sdBeat);
+        const double deltaSeconds = deltaBeat * bpm2crotchet(sdBpm);
+        return sdSeconds + deltaSeconds;
     }
 
-    double Level::seconds2beat(double seconds) const
+    double Level::seconds2beat(const double seconds) const
     {
         assert(parsed && "AdoCpp::Level class is not parsed");
-        seconds -= settings.offset / 1000;
-        double bpm = settings.bpm, last_beat = 0, beat = 0;
-        for (const auto& setSpeed : m_setSpeeds)
+        auto it = speedDataUpperBound(seconds, [](const double& seconds, const SpeedData& sd)
         {
-            if (seconds > bpm2crotchet(bpm) * (setSpeed->beat - last_beat))
-                seconds -= bpm2crotchet(bpm) * (setSpeed->beat - last_beat);
-            else
-            {
-                beat += seconds / bpm2crotchet(bpm);
-                return beat;
-            }
-            beat += setSpeed->beat - last_beat;
-            if (setSpeed->speedType == Event::GamePlay::SetSpeed::SpeedType::Bpm)
-                bpm = setSpeed->beatsPerMinute;
-            else
-                bpm *= setSpeed->bpmMultiplier;
-            last_beat = setSpeed->beat;
-        }
-        if (seconds != 0)
-            beat += seconds / bpm2crotchet(bpm);
-        return beat;
+            return seconds < sd.seconds;
+        });
+        if (it != m_speedData.begin()) --it;
+        auto [sdBeat, sdSeconds, sdBpm, sdFloor, sdAngleOffset] = *it;
+        if (isinf(sdSeconds))
+            sdBeat = 0, sdSeconds = settings.offset / 1000;
+        const double deltaSeconds = seconds - sdSeconds;
+        const double deltaBeat = deltaSeconds / bpm2crotchet(sdBpm);
+        return sdBeat + deltaBeat;
     }
 
     double Level::getAngle(const size_t floor) const
@@ -1013,6 +1042,26 @@ namespace AdoCpp
                         setSpeed->beat = tiles[setSpeed->floor].beat + setSpeed->angleOffset / 180,
                         m_setSpeeds.push_back(setSpeed);
             }
+        }
+        m_speedData.clear();
+        double bpm = settings.bpm, lastBeat = 0, deltaBeat = 0, seconds = settings.offset / 1000;
+        m_speedData.push_back({
+            -std::numeric_limits<double>::infinity(),
+            -std::numeric_limits<double>::infinity(),
+            bpm,
+            0,
+            0
+        });
+        for (const auto& setSpeed : m_setSpeeds)
+        {
+            deltaBeat = setSpeed->beat - lastBeat;
+            seconds += deltaBeat * bpm2crotchet(bpm);
+            if (setSpeed->speedType == Event::GamePlay::SetSpeed::SpeedType::Bpm)
+                bpm = setSpeed->beatsPerMinute;
+            else
+                bpm *= setSpeed->bpmMultiplier;
+            m_speedData.push_back({setSpeed->beat, seconds, bpm, setSpeed->floor, setSpeed->angleOffset});
+            lastBeat = setSpeed->beat;
         }
         for (auto& tile : tiles)
             tile.seconds = beat2seconds(tile.beat);
