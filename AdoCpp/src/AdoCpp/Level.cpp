@@ -450,7 +450,7 @@ namespace AdoCpp
         assert(parsed && "AdoCpp::Level class is not parsed");
         auto it = speedDataUpperBound(114514.0, [&](const double& _nonsense, const SpeedData& sd)
         {
-            return floor < sd.floor && seconds < sd.seconds;
+            return floor < sd.floor || seconds < sd.seconds;
         });
         if (it != m_speedData.begin()) --it;
         const double bpm = it->bpm, spb = bpm2crotchet(bpm);
