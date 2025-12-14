@@ -14,11 +14,10 @@ namespace AdoCpp
             if (mc == nullptr)
                 continue;
             m_moveCameraDatas.emplace(m_moveCameraDatas.begin(), mc->floor, mc->angleOffset, mc->beat, mc->seconds,
-                                      mc->duration, mc->relativeTo, false, 114514, Vector2lf(), mc->position, xEndSec,
+                                      mc->duration, mc->relativeTo, false, 114514, std::nullopt, mc->position, xEndSec,
                                       yEndSec, mc->rotation, rotEndSec, mc->zoom, zoomEndSec, mc->ease);
             if (mc->relativeTo)
             {
-                // relEndSec = mc->seconds; // i hate this line
                 if (*mc->relativeTo == RelativeToCamera::LastPosition)
                     xEndSec = yEndSec = mc->seconds;
             }
@@ -32,14 +31,14 @@ namespace AdoCpp
                 zoomEndSec = mc->seconds;
         }
         m_moveCameraDatas.emplace(m_moveCameraDatas.begin(), 0, 0, -INFINITY, -INFINITY, 0.0, level.settings.relativeTo,
-                                  false, relEndSec, Vector2lf(), OptionalPoint(), xEndSec, yEndSec,
+                                  false, relEndSec, std::nullopt, OptionalPoint(), xEndSec, yEndSec,
                                   level.settings.rotation, rotEndSec, level.settings.zoom, zoomEndSec, Easing::Linear);
         RelativeToCamera lastRel = level.settings.relativeTo;
         for (auto it = m_moveCameraDatas.begin() + 1; it != m_moveCameraDatas.end(); ++it)
         {
-            it->duplicatedRelPlayer =
-                lastRel == RelativeToCamera::Player && (!it->relativeTo.has_value() || *it->relativeTo == lastRel);
-            if (!it->duplicatedRelPlayer && it->relativeTo.has_value())
+            if (!it->relativeTo.has_value()) continue;
+            it->duplicatedRelPlayer = lastRel == RelativeToCamera::Player && (*it->relativeTo == RelativeToCamera::Player || *it->relativeTo == RelativeToCamera::LastPosition);
+            if (!it->duplicatedRelPlayer)
                 lastRel = *it->relativeTo;
         }
         for (auto& m_moveCameraData : std::ranges::reverse_view(m_moveCameraDatas))
@@ -61,17 +60,20 @@ namespace AdoCpp
             auto calcX = [&seconds, &data, &spb](const double endSec)
             { return data.duration != 0.0 ? (std::min(seconds, endSec) - data.seconds) / spb / data.duration : 1.0; };
 
-            if (data.relativeTo && !data.duplicatedRelPlayer)
+            if (data.relativeTo)
             {
-                const double x = calcX(data.relEndSec), y = ease(data.ease, x);
-                using enum RelativeToCamera;
-                switch (*data.relativeTo)
+                if (!data.duplicatedRelPlayer)
                 {
-                case Player:
+                    const double x = calcX(data.relEndSec), y = ease(data.ease, x);
+                    using enum RelativeToCamera;
+                    switch (*data.relativeTo)
+                    {
+                    case Player:
                     {
                         if (seconds > data.relEndSec)
                         {
-                            pos = data.playerLastPos;
+                            if (data.playerLastPos)
+                                pos = *data.playerLastPos;
                             break;
                         }
 
@@ -97,24 +99,25 @@ namespace AdoCpp
                         data.playerLastPos = pos;
                         break;
                     }
-                case Tile:
-                    pos += (level.tiles[data.floor].pos.o - pos) * y;
-                    if (seconds <= data.relEndSec)
-                        player = pos;
-                    break;
-                case Global:
-                    // pos += (Vector2lf(0, 0) - pos) * y;
-                    // pos += -pos * y;
-                    pos *= (1 - y);
-                    if (seconds <= data.relEndSec)
-                        player = pos;
-                    break;
-                case LastPosition:
-                    pos += posOff;
-                    posOff = Vector2lf(0, 0);
-                    if (seconds <= data.relEndSec)
-                        player = pos;
-                    break;
+                    case Tile:
+                        pos += (level.tiles[data.floor].pos.o - pos) * y;
+                        if (seconds <= data.relEndSec)
+                            player = pos;
+                        break;
+                    case Global:
+                        // pos += (Vector2lf(0, 0) - pos) * y;
+                        // pos += -pos * y;
+                        pos *= (1 - y);
+                        if (seconds <= data.relEndSec)
+                            player = pos;
+                        break;
+                    case LastPosition:
+                        pos += posOff;
+                        posOff = Vector2lf(0, 0);
+                        if (seconds <= data.relEndSec)
+                            player = pos;
+                        break;
+                    }
                 }
             }
 

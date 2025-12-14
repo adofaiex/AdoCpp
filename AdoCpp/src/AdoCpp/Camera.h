@@ -13,7 +13,7 @@ namespace AdoCpp
         std::optional<RelativeToCamera> relativeTo;
         bool duplicatedRelPlayer;
         double relEndSec;
-        Vector2lf playerLastPos;
+        std::optional<Vector2lf> playerLastPos;
         OptionalPoint position;
         double xEndSec;
         double yEndSec;
