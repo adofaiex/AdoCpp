@@ -11,7 +11,7 @@
 #include "State.h"
 
 Game::Game() :
-    fps(), planetRadiusPx(50), arrFps(), avgFps(), minFps(), maxFps(), textFps(font), tileSystem(level),
+    fps(), planetRadiusPx(50), arrFps(), avgFps(), minFps(), maxFps(), tileSystem(level),
     autoplay(false), fullscreen(false)
 {
 #ifdef _WIN32
@@ -33,7 +33,7 @@ Game::Game() :
     }
     window.setFramerateLimit(config.fpsLimit);
     // window.setVerticalSyncEnabled(true);
-    font = sf::Font("assets/font/SourceHanSansSC.otf");
+    font = sf::Font("assets/font/Maplestory OTF Bold.otf");
     if (!ImGui::SFML::Init(window, false))
     {
         throw std::runtime_error("Failed to call ImGui::SFML::Init.");

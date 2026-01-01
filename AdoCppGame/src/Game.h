@@ -43,7 +43,6 @@ public:
     sf::View view;
     sf::Vector2f zoom;
     sf::Font font;
-    sf::Text textFps;
 
     sf::Music music;
 

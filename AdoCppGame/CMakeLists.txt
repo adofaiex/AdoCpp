@@ -34,6 +34,7 @@ add_executable(
         src/resource.rc
         src/Config.cpp
         src/Config.h
+        src/CountDownSystem.h
 )
 
 set_property(TARGET AdoCppGame PROPERTY CXX_STANDARD 20)

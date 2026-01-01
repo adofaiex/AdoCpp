@@ -3,6 +3,7 @@
 #include <map>
 
 
+#include "CountDownSystem.h"
 #include "HitErrorMeter.h"
 #include "HitText.h"
 #include "KeyViewer.h"
@@ -37,6 +38,7 @@ private:
     HitTextSystem hitTextSystem{fontHts};
     HitErrorMeterSystem hitErrorMeterSystem;
     KeyViewerSystem keyViewerSystem;
+    CountDownSystem countDownSystem{fontHts};
     int keyInputCnt{};
     double seconds{}, beat{};
     sf::Clock spareClock;

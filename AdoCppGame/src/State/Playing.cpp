@@ -45,7 +45,7 @@ void StatePlaying::init(Game* _game)
     else
     {
         playerTileIndex = *game->activeTileIndex;
-        beat = game->level.tiles[playerTileIndex].beat;
+        beat = game->level.tiles[playerTileIndex].beat - game->level.settings.countdownTicks;
         seconds = game->level.beat2seconds(beat);
     }
     game->window.setKeyRepeatEnabled(false);
@@ -181,12 +181,11 @@ void StatePlaying::update()
 
             if (game->activeTileIndex.value_or(0) != 0)
             {
-                const float beginTimer =
-                    static_cast<float>(game->level.beat2seconds(tiles[*game->activeTileIndex].beat)) -
-                    game->config.inputOffset / 1000;
+                seconds = game->level.beat2seconds(tiles[*game->activeTileIndex].beat
+                    - game->level.settings.countdownTicks);
+                const float beginTimer = static_cast<float>(seconds) - game->config.inputOffset / 1000;
                 if (musicPlayable())
                     game->music.setPlayingOffset(sf::seconds(std::max(0.f, beginTimer)));
-                seconds = game->level.beat2seconds(tiles[*game->activeTileIndex].beat);
             }
             else
                 seconds =
@@ -285,6 +284,8 @@ void StatePlaying::update()
     hitErrorMeterSystem.setPosition({float(game->windowSize.x) / 2, float(game->windowSize.y) - 100});
     keyViewerSystem.update();
     keyViewerSystem.setPosition({50.f, float(game->windowSize.y) - 500});
+    countDownSystem.setActiveFloor(game->activeTileIndex);
+    countDownSystem.update(game->level, beat);
 
     // Update the camera
     game->camera.update(game->level, seconds, playerTileIndex);
@@ -353,6 +354,7 @@ void StatePlaying::render()
     game->window.setView(defaultView);
     game->window.draw(hitErrorMeterSystem);
     game->window.draw(keyViewerSystem);
+    game->window.draw(countDownSystem);
 
     static constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBackground |

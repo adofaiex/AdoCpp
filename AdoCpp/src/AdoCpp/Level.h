@@ -86,7 +86,7 @@ namespace AdoCpp
         double pitch = 100;
         Hitsound hitsound = Hitsound::Kick;
         double hitsoundVolume = 100;
-        double countdownTicks = 0;
+        double countdownTicks = 4;
         TrackColorType trackColorType = TrackColorType::Single;
         Color trackColor = Color(0xdebb7bff);
         Color secondaryTrackColor = Color(0xdebb7bff);
