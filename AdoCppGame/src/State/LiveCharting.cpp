@@ -126,12 +126,12 @@ void LiveCharting::handleEvent(const sf::Event event)
                 {
                     if (game->activeTileIndex)
                     {
-                        game->level.insertTile(*game->activeTileIndex + 1, value);
+                        game->level.insertTile(*game->activeTileIndex + 1, AdoCpp::degrees(value));
                         (*game->activeTileIndex)++;
                     }
                     else
                     {
-                        game->level.pushBackTile(value);
+                        game->level.pushBackTile(AdoCpp::degrees(value));
                         game->activeTileIndex = game->level.tiles.size() - 1;
                     }
                     parseUpdateLevel(*game->activeTileIndex);
@@ -156,14 +156,14 @@ void LiveCharting::handleEvent(const sf::Event event)
                 }
                 if (keyPressed->code == Tab)
                 {
-                    game->level.insertTile(*game->activeTileIndex + 1, 999);
+                    game->level.insertTile(*game->activeTileIndex + 1, AdoCpp::degrees(999));
                     parseUpdateLevel(*game->activeTileIndex);
                 }
                 if (keyPressed->code == Space && sf::Keyboard::isKeyPressed(LShift))
                 {
                     const double tileAngle = game->level.tiles[*game->activeTileIndex].angle.deg();
                     const double angle = AdoCpp::degrees(tileAngle + 180).wrapUnsigned().deg();
-                    game->level.insertTile(*game->activeTileIndex + 1, angle);
+                    game->level.insertTile(*game->activeTileIndex + 1, AdoCpp::degrees(angle));
                     parseUpdateLevel(*game->activeTileIndex);
                 }
                 if (keyPressed->code == Left)

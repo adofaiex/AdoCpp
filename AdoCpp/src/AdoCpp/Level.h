@@ -226,13 +226,13 @@ namespace AdoCpp
          * @param floor The index.
          * @param angle The angle.
          */
-        void insertTile(size_t floor, double angle);
+        void insertTile(size_t floor, Angle angle);
         /**
          * Change the tile's angle into a new one.
          * @param floor The floor.
          * @param angle The new angle.
          */
-        void changeTileAngle(size_t floor, double angle);
+        void changeTileAngle(size_t floor, Angle angle);
 
         /**
          * @brief Erase the tiles.
@@ -250,7 +250,7 @@ namespace AdoCpp
          * @brief Push back the tile.
          * @param angle The angle.
          */
-        void pushBackTile(double angle);
+        void pushBackTile(Angle angle);
 
         /**
          * @brief Pop back the tile.
@@ -269,9 +269,9 @@ namespace AdoCpp
          * @brief Get the included angle between the two planets.
          * @param floor The index of the tile.
          * @param seconds The seconds.
-         * @return The position of the two planets.
+         * @return The angle of the two planets.
          */
-        [[nodiscard]] double getPlanetsDir(size_t floor, double seconds) const;
+        [[nodiscard]] Angle getPlanetsDir(size_t floor, double seconds) const;
 
         /**
          * @brief Get the position of the two planets.
@@ -350,7 +350,7 @@ namespace AdoCpp
          */
         [[nodiscard]] double seconds2beat(double seconds) const;
 
-        [[nodiscard]] double getAngle(size_t floor) const;
+        [[nodiscard]] Angle getAngle(size_t floor) const;
 
         /**
          * @brief Get the timing.

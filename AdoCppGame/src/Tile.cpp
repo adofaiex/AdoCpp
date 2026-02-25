@@ -680,7 +680,7 @@ void TileSystem::parse()
         {
             if (const auto twirl = std::dynamic_pointer_cast<AdoCpp::Event::GamePlay::Twirl>(event))
             {
-                m_tileSprites[twirl->floor].setTwirl(m_level.getAngle(twirl->floor + 1) < 180 ? 1 : 2);
+                m_tileSprites[twirl->floor].setTwirl(m_level.getAngle(twirl->floor + 1).deg() < 180 ? 1 : 2);
             }
             else if (const auto setSpeed = std::dynamic_pointer_cast<AdoCpp::Event::GamePlay::SetSpeed>(event))
             {

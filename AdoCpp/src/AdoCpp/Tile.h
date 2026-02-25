@@ -237,6 +237,18 @@ namespace AdoCpp
         ~Tile() = default;
 
         /**
+         * @brief Construct a tile.
+         * @param angle The angle of the tile.
+         */
+        explicit Tile(const double angle) : angle(degrees(angle)) {}
+
+        /**
+         * @brief Construct a tile.
+         * @param angle The angle of the tile.
+         */
+        Tile(const Angle& angle) : angle(angle) {}
+
+        /**
          * @brief The tile's angle.
          */
         Angle angle{};
@@ -351,11 +363,5 @@ namespace AdoCpp
             // double bpm; // TODO
         };
         std::vector<MoveTrackData> moveTrackDatas;
-
-        /**
-         * @brief Construct a tile.
-         * @param angle The angle of the tile.
-         */
-        explicit Tile(const double angle) : angle(degrees(angle)) {}
     };
 } // namespace AdoCpp

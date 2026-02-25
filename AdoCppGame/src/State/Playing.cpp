@@ -368,7 +368,7 @@ void StatePlaying::render()
         static double progress, bpm, kps;
         progress = 100 * static_cast<double>(playerTileIndex) / static_cast<double>(tiles.size() - 1);
         bpm = game->level.getBpmByBeat(beat);
-        kps = bpm / 60 / (game->level.getAngle(playerTileIndex + (playerTileIndex + 1 == tiles.size() ? 0 : 1)) / 180);
+        kps = bpm / 60 / (game->level.getAngle(playerTileIndex + (playerTileIndex + 1 == tiles.size() ? 0 : 1)).deg() / 180);
         ImGui::Text("Progress: %.2f%%", progress);
         ImGui::Text("BPM: %.2f", bpm);
         ImGui::Text("KPS: %.2f", kps);

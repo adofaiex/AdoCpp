@@ -130,8 +130,6 @@ namespace AdoCpp
 
     Level::Level(const std::filesystem::path& path) { fromFile(path); }
 
-    static double deg2rad(const double deg) { return deg * 3.141592653589793 / 180; }
-
     void Level::clear()
     {
         parsed = false;
@@ -377,15 +375,15 @@ namespace AdoCpp
         parsed = false;
         tiles.insert(tiles.begin() + floor, tile); // NOLINT(*-narrowing-conversions)
     }
-    void Level::insertTile(const size_t floor, const double angle)
+    void Level::insertTile(const size_t floor, const Angle angle)
     {
         parsed = false;
         tiles.emplace(tiles.begin() + floor, angle); // NOLINT(*-narrowing-conversions)
     }
-    void Level::changeTileAngle(const size_t floor, const double angle)
+    void Level::changeTileAngle(const size_t floor, const Angle angle)
     {
         parsed = false;
-        tiles[floor].angle = degrees(angle);
+        tiles[floor].angle = angle;
     }
     void Level::eraseTile(const size_t first, const size_t last)
     {
@@ -398,7 +396,7 @@ namespace AdoCpp
         parsed = false;
         tiles.push_back(tile);
     }
-    void Level::pushBackTile(double angle)
+    void Level::pushBackTile(const Angle angle)
     {
         parsed = false;
         tiles.emplace_back(angle);
@@ -434,7 +432,7 @@ namespace AdoCpp
         return std::upper_bound(m_speedData.begin(), m_speedData.end(), val, pred);
     }
 
-    double Level::getPlanetsDir(const size_t floor, const double seconds) const
+    Angle Level::getPlanetsDir(const size_t floor, const double seconds) const
     {
         assert(parsed && "AdoCpp::Level class is not parsed");
         auto it = speedDataUpperBound(114514.0, [&](const double& _nonsense, const SpeedData& sd)
@@ -446,21 +444,21 @@ namespace AdoCpp
         // const double bpm = getBpm([&floor, &seconds](const Event::GamePlay::SetSpeed& ss)
         //                           { return ss.floor <= floor && ss.seconds <= seconds; }),
         //              spb = bpm2crotchet(bpm);
-        double angle;
+        Angle angle;
         if (floor == 0)
         {
-            angle = -seconds / spb * 180;
+            angle = -seconds / spb * degrees(180);
         }
         else
         {
             if (tiles[floor].angle.deg() == 999)
-                angle = tiles[floor - 1].angle.deg();
+                angle = tiles[floor - 1].angle;
             else
-                angle = tiles[floor].angle.deg() - 180;
+                angle = tiles[floor].angle + degrees(180);
             if (tiles[floor].orbit == Clockwise)
-                angle -= ((seconds - tiles[floor].seconds) / spb) * 180;
+                angle -= ((seconds - tiles[floor].seconds) / spb) * degrees(180);
             else
-                angle += ((seconds - tiles[floor].seconds) / spb) * 180;
+                angle += ((seconds - tiles[floor].seconds) / spb) * degrees(180);
         }
         return angle;
     }
@@ -468,8 +466,8 @@ namespace AdoCpp
     {
         assert(parsed && "AdoCpp::Level class is not parsed");
         Vector2lf p2, p1 = p2 = tiles[floor].stickToFloors ? tiles[floor].pos.c : tiles[floor].pos.o;
-        const double angle = getPlanetsDir(floor, seconds);
-        p2.x += cos(deg2rad(angle)), p2.y += sin(deg2rad(angle));
+        const Angle angle = getPlanetsDir(floor, seconds);
+        p2.x += cos(angle.rad()), p2.y += sin(angle.rad());
         if (isFirePlanetStatic(floor))
             return std::make_pair(p1, p2);
         return std::make_pair(p2, p1);
@@ -581,21 +579,21 @@ namespace AdoCpp
         return sdBeat + deltaBeat;
     }
 
-    double Level::getAngle(const size_t floor) const
+    Angle Level::getAngle(const size_t floor) const
     {
         assert(parsed && "AdoCpp::Level class is not parsed");
         if (tiles[floor].angle.deg() == 999)
-            return 0;
-        double angle;
+            return degrees(0);
+        Angle angle;
         if (tiles[floor - 1].angle.deg() == 999)
-            angle = tiles[floor - 2].angle.deg() - tiles[floor].angle.deg();
+            angle = tiles[floor - 2].angle - tiles[floor].angle;
         else
-            angle = tiles[floor - 1].angle.deg() - 180 - tiles[floor].angle.deg();
+            angle = tiles[floor - 1].angle - degrees(180) - tiles[floor].angle;
         if (tiles[floor - 1].orbit == CounterClockwise)
             angle *= -1;
-        angle = positiveRemainder(angle, 360);
-        if (angle == 0)
-            angle = 360;
+        angle = angle.wrapUnsigned();
+        if (angle == degrees(0))
+            angle = degrees(360);
         return angle;
     }
 
@@ -750,20 +748,19 @@ namespace AdoCpp
                 }
                 else
                 {
-                    double angle;
+                    Angle angle;
                     if (tiles[i - 1].angle.deg() == 999)
-                        angle = tiles[i - 2].angle.deg() - tiles[i].angle.deg();
+                        angle = tiles[i - 2].angle - tiles[i].angle;
                     else
-                        angle = tiles[i - 1].angle.deg() - 180 - tiles[i].angle.deg();
+                        angle = tiles[i - 1].angle - degrees(180) - tiles[i].angle;
                     if (tiles[i - 1].orbit == CounterClockwise)
                         angle *= -1;
-                    while (angle <= 0)
-                        angle += 360;
-                    while (angle > 360)
-                        angle -= 360;
+                    angle = angle.wrapUnsigned();
+                    if (angle == degrees(0))
+                        angle = degrees(360);
                     if (i == 1)
-                        angle -= 180;
-                    const double beat = angle / 180 + pauses[i - 1] + (holds[i - 1] ? holds[i - 1]->duration * 2 : 0);
+                        angle -= degrees(180);
+                    const double beat = angle / degrees(180) + pauses[i - 1] + (holds[i - 1] ? holds[i - 1]->duration * 2 : 0);
                     tiles[i].beat = tiles[i - 1].beat + beat;
                 }
             }
@@ -774,9 +771,9 @@ namespace AdoCpp
                 tiles[i].stickToFloors = tiles[i - 1].stickToFloors;
                 tiles[i].pos.o = tiles[i - 1].pos.o + nextPosOff;
                 tiles[i].editorPos = tiles[i - 1].editorPos + nextPosOff;
-                const double angle =
-                    tiles[i].angle.deg() == 999 ? (tiles[i - 1].angle + degrees(180)).rad() : tiles[i].angle.rad();
-                const double dx = cos(angle), dy = sin(angle);
+                const Angle angle =
+                    tiles[i].angle.deg() == 999 ? (tiles[i - 1].angle + degrees(180)) : tiles[i].angle;
+                const double dx = cos(angle.rad()), dy = sin(angle.rad());
                 tiles[i].pos.o.x += dx, tiles[i].editorPos.x += dx;
                 tiles[i].pos.o.y += dy, tiles[i].editorPos.y += dy;
             }
