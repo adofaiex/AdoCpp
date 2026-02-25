@@ -19,3 +19,4 @@
 
 # CMake
 cmake-build-*/
+build/

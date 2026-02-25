@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <AdoCpp/Level.h>
+#include <cmath>
 
 class CountDownSystem final : public sf::Drawable, public sf::Transformable
 {

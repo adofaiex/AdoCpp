@@ -1,6 +1,5 @@
 #pragma once
 
-#include <complex.h>
 #include <optional>
 #include <rapidjson/document.h>
 #include <stdexcept>

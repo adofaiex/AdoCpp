@@ -75,6 +75,8 @@ namespace AdoCpp
     struct Settings
     {
         int version = 15;
+
+        // Song Settings
         std::string artist;
         std::string song;
         std::string author;
@@ -87,6 +89,8 @@ namespace AdoCpp
         Hitsound hitsound = Hitsound::Kick;
         double hitsoundVolume = 100;
         double countdownTicks = 4;
+
+        // Track Settings
         TrackColorType trackColorType = TrackColorType::Single;
         Color trackColor = Color(0xdebb7bff);
         Color secondaryTrackColor = Color(0xdebb7bff);
@@ -98,9 +102,13 @@ namespace AdoCpp
         double beatsAhead = 0;
         TrackDisappearAnimation trackDisappearAnimation = TrackDisappearAnimation::None;
         double beatsBehind = 0;
+
+        // Background Settings
         Color backgroundColor = Color(0, 0, 0);
         bool stickToFloors = false;
         double unscaledSize = 100;
+        
+        // Camera Settings
         RelativeToCamera relativeTo = RelativeToCamera::Player;
         Vector2lf position;
         double rotation = 0;

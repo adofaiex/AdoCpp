@@ -1,6 +1,8 @@
 # AdoCpp
 
-## Introduction
+## AdoCpp Library
+
+### Introduction
 
 AdoCpp is an ADOFAI level parser and generator for C++.
 
@@ -10,7 +12,7 @@ AdoCpp uses following software as its dependencies:
 - Rapidjson to parse JSON files
 - (optional) Doxygen to build documentation
 
-## Usage at a glance
+### Usage at a glance
 
 ```c++
 #include <iostream>
@@ -58,7 +60,7 @@ int main()
     level.tiles[2].events.push_back(twirl); // Add an event to the tile.
 
     // 8. Export the level as JSON (needn't parse).
-    rapidjson::Document doc = level.intoJson();
+    std::unique_ptr<rapidjson::Document> doc = level.intoJson();
     
     return 0;
 }
@@ -69,9 +71,9 @@ and it is a little buggy.
 
 ---
 
-# AdoCppGame
+## AdoCppGame
 
-## Introduction
+### Introduction
 
 AdoCppGame is an ADOFAI level editor (cannot edit though) and player.
 
@@ -89,12 +91,13 @@ AdoCppGame uses following software and libraries as its dependencies:
 Notice that AdoCppGame is still under development
 and it is a little buggy.
 
-## Usage
+### Usage
 
 When you open AdoCppGame, the game will be in charting state.
 
 Keybind for changing the state:
-```
+
+```text
 Charting --[`]-> LiveCharting
 LiveCharting --[Esc]-> Charting
 Charting --[Space]-> Playing

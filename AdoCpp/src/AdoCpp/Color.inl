@@ -1,7 +1,7 @@
 #pragma once
-#include <cassert>
-
 #include "Color.h"
+#include <cassert>
+#include <algorithm>
 
 namespace AdoCpp
 {
@@ -67,7 +67,7 @@ namespace AdoCpp
     constexpr std::tuple<double, double, double> Color::toHSV() const
     {
         const double r1 = r / 255.0, g1 = g / 255.0, b1 = b / 255.0;
-        const double cMax = std::max(r1, std::max(g1, b1)), cMin = std::min(r1, std::min(g1, b1)), delta = cMax - cMin;
+        const double cMax = std::max({r1, g1, b1}), cMin = std::min({r1, g1, b1}), delta = cMax - cMin;
         auto H = [&]() -> double
         {
             if (delta == 0)
@@ -109,7 +109,7 @@ namespace AdoCpp
         str.push_back(digit16ToChar(b / 16)), str.push_back(digit16ToChar(b % 16));
 
         using enum ToStringAlphaMode;
-        if (alphaMode != Ignore && (alphaMode == Show || alphaMode == Auto && a != 255))
+        if (alphaMode != Ignore && (alphaMode == Show || (alphaMode == Auto && a != 255)))
             str.push_back(digit16ToChar(a / 16)), str.push_back(digit16ToChar(a % 16));
         return str;
     }

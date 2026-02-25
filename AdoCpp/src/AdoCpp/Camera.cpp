@@ -1,5 +1,6 @@
 #include "Camera.h"
 #include <ranges>
+#include <cmath>
 
 namespace AdoCpp
 {

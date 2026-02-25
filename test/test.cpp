@@ -8,10 +8,10 @@ constexpr auto PATH = "F:/Levels/adofaigg2191 [18] The Limit Does Not Exist (By 
 void test()
 {
     const AdoCpp::Level level{PATH};
-    const rapidjson::Document doc = level.intoJson();
+    const std::unique_ptr<rapidjson::Document> doc = level.intoJson();
     rapidjson::StringBuffer buffer;
     rapidjson::Writer writer(buffer);
-    doc.Accept(writer);
+    doc->Accept(writer);
     std::cout << buffer.GetString() << std::endl;
 }
 
@@ -59,7 +59,7 @@ int main()
     level.tiles[2].events.push_back(twirl); // Add an event to the tile.
 
     // 8. Export the level as JSON (needn't parse).
-    rapidjson::Document doc = level.intoJson();
+    std::unique_ptr<rapidjson::Document> doc = level.intoJson();
 
     return 0;
 }

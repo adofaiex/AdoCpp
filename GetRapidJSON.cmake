@@ -6,7 +6,6 @@ set(RAPIDJSON_HAS_STDSTRING ON)
 if (USE_MIRROR)
     FetchContent_Declare(RapidJSON
             GIT_REPOSITORY https://gh.xmly.dev/github.com/Tencent/rapidjson.git
-            GIT_TAG v1.1.0
             GIT_SHALLOW ON
             SYSTEM
             #        FIND_PACKAGE_ARGS NAMES RapidJSON
@@ -14,7 +13,6 @@ if (USE_MIRROR)
 else ()
     FetchContent_Declare(RapidJSON
             GIT_REPOSITORY https://github.com/Tencent/rapidjson.git
-            GIT_TAG v1.1.0
             GIT_SHALLOW ON
             SYSTEM
             #        FIND_PACKAGE_ARGS NAMES RapidJSON

@@ -569,7 +569,7 @@ namespace AdoCpp
         });
         if (it != m_speedData.begin()) --it;
         auto [sdBeat, sdSeconds, sdBpm, sdFloor, sdAngleOffset] = *it;
-        if (isinf(sdBeat))
+        if (std::isinf(sdBeat))
             sdBeat = 0, sdSeconds = settings.offset / 1000;
         const double deltaBeat = (beat - sdBeat);
         const double deltaSeconds = deltaBeat * bpm2crotchet(sdBpm);
@@ -585,7 +585,7 @@ namespace AdoCpp
         });
         if (it != m_speedData.begin()) --it;
         auto [sdBeat, sdSeconds, sdBpm, sdFloor, sdAngleOffset] = *it;
-        if (isinf(sdSeconds))
+        if (std::isinf(sdSeconds))
             sdBeat = 0, sdSeconds = settings.offset / 1000;
         const double deltaSeconds = seconds - sdSeconds;
         const double deltaBeat = deltaSeconds / bpm2crotchet(sdBpm);
