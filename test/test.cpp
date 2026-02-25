@@ -1,27 +1,21 @@
 #include <AdoCpp.h>
 #include <iostream>
-#include <rapidjson/prettywriter.h>
 
-constexpr auto PATH = "F:/Levels/adofaigg2191 [18] The Limit Does Not Exist (By  -K & BamgoeSN)"
+const std::filesystem::path PATH = "F:/Levels/adofaigg2191 [18] The Limit Does Not Exist (By  -K & BamgoeSN)"
                       "_1751702585602/The_limit_does_not_exist.adofai";
 
 void test()
 {
     const AdoCpp::Level level{PATH};
-    const std::unique_ptr<rapidjson::Document> doc = level.intoJson();
-    rapidjson::StringBuffer buffer;
-    rapidjson::Writer writer(buffer);
-    doc->Accept(writer);
-    std::cout << buffer.GetString() << std::endl;
+    const Json::Value doc = level.intoJson();
+    Json::StreamWriterBuilder builder;
+    std::cout << Json::writeString(builder, doc) << std::endl;
 }
-
-#include <iostream>
-#include <AdoCpp.h>
 
 int main()
 {
     // 1. Import an ADOFAI file to the level.
-    constexpr const char* PATH = "...";
+    const std::filesystem::path PATH = "...";
     AdoCpp::Level level{PATH};
     // or "AdoCpp::Level level; level.fromFile(PATH);"
 
@@ -59,7 +53,7 @@ int main()
     level.tiles[2].events.push_back(twirl); // Add an event to the tile.
 
     // 8. Export the level as JSON (needn't parse).
-    std::unique_ptr<rapidjson::Document> doc = level.intoJson();
+    Json::Value doc = level.intoJson();
 
     return 0;
 }

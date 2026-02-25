@@ -4,9 +4,9 @@
 
 namespace AdoCpp
 {
-    Event::Event* Event::newEvent(const rapidjson::Value& json)
+    Event::Event* Event::newEvent(const Json::Value& json)
     {
-        const char* eventType = json["eventType"].GetString();
+        const char* eventType = json["eventType"].asCString();
         if (strcmp(eventType, "SetSpeed") == 0)
             return new GamePlay::SetSpeed(json);
         if (strcmp(eventType, "Twirl") == 0)

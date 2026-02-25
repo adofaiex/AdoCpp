@@ -1,10 +1,10 @@
 #pragma once
 
 #include <optional>
-#include <rapidjson/document.h>
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <json5cpp.h>
 
 namespace AdoCpp
 {
@@ -21,40 +21,38 @@ namespace AdoCpp
     }
 
     typedef std::pair<std::optional<double>, std::optional<double>> OptionalPoint;
-    inline std::optional<rapidjson::Value> optionalPoint2json(const OptionalPoint& op,
-                                                              rapidjson::Document::AllocatorType& alloc)
+    inline std::optional<Json::Value> optionalPoint2json(const OptionalPoint& op)
     {
         if (!op.first && !op.second)
             return std::nullopt;
-        rapidjson::Value val;
-        val.SetArray();
-        rapidjson::Value null(rapidjson::kNullType);
+        Json::Value val(Json::arrayValue);
+        Json::Value null(Json::nullValue);
         if (op.first && !op.second)
         {
             if (static_cast<int>(*op.first) == *op.first)
-                val.PushBack(static_cast<int>(*op.first), alloc);
+                val.append(static_cast<int>(*op.first));
             else
-                val.PushBack(*op.first, alloc);
-            val.PushBack(null, alloc);
+                val.append(*op.first);
+            val.append(null);
         }
         else if (!op.first && op.second)
         {
-            val.PushBack(null, alloc);
+            val.append(null);
             if (static_cast<int>(*op.second) == *op.second)
-                val.PushBack(static_cast<int>(*op.second), alloc);
+                val.append(static_cast<int>(*op.second));
             else
-                val.PushBack(*op.second, alloc);
+                val.append(*op.second);
         }
         else
         {
             if (static_cast<int>(*op.first) == *op.first)
-                val.PushBack(static_cast<int>(*op.first), alloc);
+                val.append(static_cast<int>(*op.first));
             else
-                val.PushBack(*op.first, alloc);
+                val.append(*op.first);
             if (static_cast<int>(*op.second) == *op.second)
-                val.PushBack(static_cast<int>(*op.second), alloc);
+                val.append(static_cast<int>(*op.second));
             else
-                val.PushBack(*op.second, alloc);
+                val.append(*op.second);
         }
         return val;
     }
@@ -115,13 +113,13 @@ namespace AdoCpp
         RelativeIndex() = default;
         RelativeIndex(const int64_t& index, const RelativeToTile& relativeTo) : index(index), relativeTo(relativeTo) {}
 
-        explicit RelativeIndex(const rapidjson::Value& data) :
-            index(data[0].GetInt64()), relativeTo(cstr2relativeToTile(data[1].GetString()))
+        explicit RelativeIndex(const Json::Value& data) :
+            index(data[0].asInt64()), relativeTo(cstr2relativeToTile(data[1].asCString()))
         {
         }
         int64_t index{};
         RelativeToTile relativeTo{};
-        std::unique_ptr<rapidjson::Value> intoJson(rapidjson::Document::AllocatorType& alloc) const;
+        Json::Value intoJson() const;
     };
 
     enum class RelativeToCamera
@@ -152,7 +150,7 @@ namespace AdoCpp
      * data == false || data == "Disabled" => false.
      * Otherwise, throw an exception.
      */
-    bool toBool(const rapidjson::Value& data);
+    bool toBool(const Json::Value& data);
 
     /**
      * @brief Convert bpm to spb(seconds per beat).
@@ -179,10 +177,8 @@ namespace AdoCpp
     double includedAngle(double angleDeg, double nextAngleDeg);
 
     std::vector<std::string> cstr2tags(const char* str);
-    void tags2cstr(const std::vector<std::string>& tags, char* dest, rsize_t sizeInBytes);
+    void tags2string(const std::vector<std::string>& tags, char* dest, rsize_t sizeInBytes);
 
-    void addTag(rapidjson::Value& jsonValue, const std::vector<std::string>& tags,
-                rapidjson::Document::AllocatorType& alloc, bool repeatEvents = false);
-    void autoRemoveDecimalPart(rapidjson::Value& jsonValue, const char* name, double value,
-                               rapidjson::Document::AllocatorType& alloc);
+    void addTag(Json::Value& jsonValue, const std::vector<std::string>& tags, bool repeatEvents = false);
+    void autoRemoveDecimalPart(Json::Value& jsonValue, const char* name, double value);
 } // namespace AdoCpp

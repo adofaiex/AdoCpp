@@ -10,10 +10,8 @@
 #include <imgui.h>
 #include <iostream>
 #include <misc/cpp/imgui_stdlib.h>
-
+#include <json5cpp.h>
 #include <implot.h>
-#include <rapidjson/ostreamwrapper.h>
-#include <rapidjson/prettywriter.h>
 
 constexpr ImGuiWindowFlags ADOCPPGAME_FLAGS =
     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
@@ -333,11 +331,9 @@ void StateCharting::renderFilenameBar()
             {
                 const auto path = ImGuiFileDialog::Instance()->GetFilePathName();
                 std::ofstream ofs(path, std::ios::binary);
-                std::unique_ptr<rapidjson::Document> doc = game->level.intoJson();
-                rapidjson::OStreamWrapper osw(ofs);
-                rapidjson::EncodedOutputStream<rapidjson::UTF8<>, rapidjson::OStreamWrapper> eos(osw, true);
-                rapidjson::PrettyWriter writer(eos);
-                doc->Accept(writer);
+                Json::Value value = game->level.intoJson();
+                Json::StyledStreamWriter ssw;
+                ssw.write(ofs, value);
             }
             ImGuiFileDialog::Instance()->Close();
         }

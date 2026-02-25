@@ -9,22 +9,22 @@
 
 namespace AdoCpp
 {
-    std::unique_ptr<rapidjson::Value> RelativeIndex::intoJson(rapidjson::Document::AllocatorType& alloc) const
+    Json::Value RelativeIndex::intoJson() const
     {
-        auto val = std::make_unique<rapidjson::Value>(rapidjson::kArrayType);
-        val->PushBack(index, alloc);
-        val->PushBack(rapidjson::StringRef(relativeToTile2cstr(relativeTo)), alloc);
+        Json::Value val(Json::arrayValue);
+        val.append(index);
+        val.append(relativeTo);
         return val;
     }
-    bool toBool(const rapidjson::Value& data)
+    bool toBool(const Json::Value& data)
     {
-        if (data.IsBool())
-            return data.GetBool();
-        if (data.IsString())
+        if (data.isBool())
+            return data.asBool();
+        if (data.isString())
         {
-            if (!strcmp(data.GetString(), "Enabled"))
+            if (!strcmp(data.asCString(), "Enabled"))
                 return true;
-            if (!strcmp(data.GetString(), "Disabled"))
+            if (!strcmp(data.asCString(), "Disabled"))
                 return false;
         }
         throw std::invalid_argument(R"(data is not a boolean or a string "Enabled" or a string "Disabled")");
@@ -47,7 +47,7 @@ namespace AdoCpp
             vec.push_back(token);
         return vec;
     }
-    void tags2cstr(const std::vector<std::string>& tags, char* dest, const rsize_t sizeInBytes)
+    std::string tags2string(const std::vector<std::string>& tags)
     {
         bool first = true;
         std::string str;
@@ -58,32 +58,22 @@ namespace AdoCpp
             str += tag;
             first = false;
         }
-        strcpy_s(dest, sizeInBytes, str.c_str());
+        return str;
     }
-    void addTag(rapidjson::Value& jsonValue, const std::vector<std::string>& tags,
-                rapidjson::Document::AllocatorType& alloc, bool repeatEvents)
+    void addTag(Json::Value& jsonValue, const std::vector<std::string>& tags, bool repeatEvents)
     {
-        char tagBuf[1145]{};
-        tags2cstr(tags, tagBuf, 1145);
-        rapidjson::Value tagValue;
-        tagValue.SetString(tagBuf, strlen(tagBuf), alloc);
-        if (repeatEvents)
-            jsonValue.AddMember("tag", tagValue, alloc);
-        else
-            jsonValue.AddMember("eventTag", tagValue, alloc);
+        jsonValue[repeatEvents ? "tag" : "eventTag"] = tags2string(tags);
     }
-    void autoRemoveDecimalPart(rapidjson::Value& jsonValue, const char* name, const double value,
-                               rapidjson::Document::AllocatorType& alloc)
+    void autoRemoveDecimalPart(Json::Value& jsonValue, const char* name, const double value)
     {
-        if (static_cast<int>(value) == value)
-            jsonValue.AddMember(rapidjson::StringRef(name), static_cast<int>(value), alloc);
+        if (static_cast<int64_t>(value) == value)
+            jsonValue[name] = static_cast<int64_t>(value);
         else
-            jsonValue.AddMember(rapidjson::StringRef(name), value, alloc);
+            jsonValue[name] = value;
     }
     template <class T>
-    std::unique_ptr<rapidjson::Value> vector2ToJson(Vector2<T> vec2, rapidjson::Document::AllocatorType& alloc)
+    Json::Value vector2ToJson(Vector2<T> vec2)
     {
-        auto val = std::make_unique<rapidjson::Value>();
-
+        // TODO
     }
 } // namespace AdoCpp

@@ -60,6 +60,8 @@ target_include_directories(
         src
         thirdparty
         thirdparty/implot-master
+        ${jsoncpp_SOURCE_DIR}/include/
+        ${PROJECT_SOURCE_DIR}/AdoCpp/include
         ${PROJECT_SOURCE_DIR}/AdoCpp/src
         ${exprtk_SOURCE_DIR}
 )
@@ -67,17 +69,13 @@ target_include_directories(
 add_dependencies(AdoCppGame AdoCpp)
 target_link_libraries(
         AdoCppGame PRIVATE
-
-        rapidjson::rapidjson
-
-        AdoCpp
-
-        SFML::System
-        SFML::Window
-        SFML::Graphics
-        SFML::Audio
-
         ImGui-SFML::ImGui-SFML
+        SFML::Audio
+        SFML::Graphics
+        SFML::Window
+        SFML::System
+        AdoCpp
+        jsoncpp::jsoncpp
 )
 target_include_directories(
         AdoCppGame PRIVATE

@@ -1,9 +1,5 @@
 #pragma once
-#ifndef RAPIDJSON_HAS_STDSTRING
-#define RAPIDJSON_HAS_STDSTRING 1
-#endif
 #include <memory>
-#include <rapidjson/document.h>
 #include <string>
 #include <vector>
 #include "AdoCpp/Utils.h"
@@ -28,7 +24,7 @@ namespace AdoCpp::Event
          * @brief Convert json data into Event class.
          * @param data Json data.
          */
-        explicit Event(const rapidjson::Value& data);
+        explicit Event(const Json::Value& data);
         /**
          * @brief Floor of event.
          */
@@ -62,13 +58,7 @@ namespace AdoCpp::Event
          * @param alloc Allocator.
          * @return Unique pointer of json value data.
          */
-        [[nodiscard]] virtual std::unique_ptr<rapidjson::Value>
-        intoJson(rapidjson::Document::AllocatorType& alloc) const = 0;
-        /**
-         * @brief Convert event into json document data.
-         * @return Unique pointer of json document data.
-         */
-        [[nodiscard]] std::unique_ptr<rapidjson::Document> intoJson() const;
+        [[nodiscard]] virtual Json::Value intoJson() const = 0;
     };
 
     /**
@@ -89,7 +79,7 @@ namespace AdoCpp::Event
          * @brief Convert json data into StaticEvent class.
          * @param data Json data.
          */
-        explicit StaticEvent(const rapidjson::Value& data);
+        explicit StaticEvent(const Json::Value& data);
     };
 
     /**
@@ -110,7 +100,7 @@ namespace AdoCpp::Event
          * Convert json data into DynamicEvent class.
          * @param data The json data.
          */
-        explicit DynamicEvent(const rapidjson::Value& data);
+        explicit DynamicEvent(const Json::Value& data);
         /**
          * @brief Clone the event.
          * @return the cloned event.

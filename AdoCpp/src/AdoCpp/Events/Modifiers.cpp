@@ -2,33 +2,34 @@
 
 namespace AdoCpp::Event::Modifiers
 {
-    RepeatEvents::RepeatEvents(const rapidjson::Value& data) : Event(data)
+    RepeatEvents::RepeatEvents(const Json::Value& data) : Event(data)
     {
-        if (data.HasMember("repeatType") && !strcmp(data["repeatType"].GetString(), "Floor"))
+        if (data.isMember("repeatType") && !strcmp(data["repeatType"].asCString(), "Floor"))
             repeatType = RepeatType::Floor;
         else
             repeatType = RepeatType::Beat;
-        repetitions = data["repetitions"].GetUint64();
-        floorCount = data.HasMember("floorCount") ? data["floorCount"].GetUint64() : 0;
-        interval = data["interval"].GetDouble();
-        executeOnCurrentFloor = data.HasMember("executeOnCurrentFloor") ? toBool(data["executeOnCurrentFloor"]) : false;
-        tag = cstr2tags(data["tag"].GetString());
+        repetitions = data["repetitions"].asUInt64();
+        floorCount = data.isMember("floorCount") ? data["floorCount"].asUInt64() : 0;
+        interval = data["interval"].asDouble();
+        executeOnCurrentFloor = data.isMember("executeOnCurrentFloor") ? toBool(data["executeOnCurrentFloor"]) : false;
+        tag = cstr2tags(data["tag"].asCString());
     }
-    std::unique_ptr<rapidjson::Value> RepeatEvents::intoJson(rapidjson::Document::AllocatorType& alloc) const
+    Json::Value RepeatEvents::intoJson() const
     {
-        auto val = std::make_unique<rapidjson::Value>(rapidjson::kObjectType);
-        val->AddMember("floor", floor, alloc).AddMember("eventType", rapidjson::StringRef(name()), alloc);
+        Json::Value val(Json::objectValue);
+        val["floor"] = floor;
+        val["eventType"] = name();
         if (!active)
-            val->AddMember("active", active, alloc);
+            val["active"] = active;
         if (repeatType == RepeatType::Floor)
-            val->AddMember("repeatType", "Floor", alloc);
+            val["repeatType"] = "Floor";
         else if (repeatType == RepeatType::Beat)
-            val->AddMember("repeatType", "Beat", alloc);
-        val->AddMember("repetitions", repetitions, alloc);
-        val->AddMember("floorCount", floorCount, alloc);
-        autoRemoveDecimalPart(*val, "interval", interval, alloc);
-        val->AddMember("executeOnCurrentFloor", executeOnCurrentFloor, alloc);
-        addTag(*val, tag, alloc, true);
+            val["repeatType"] = "Beat";
+        val["repetitions"] = repetitions;
+        val["floorCount"] = floorCount;
+        autoRemoveDecimalPart(val, "interval", interval);
+        val["executeOnCurrentFloor"] = executeOnCurrentFloor;
+        addTag(val, tag, true);
         return val;
     }
 } // namespace AdoCpp::Event::Modifiers

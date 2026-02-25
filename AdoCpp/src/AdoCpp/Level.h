@@ -1,16 +1,10 @@
 #pragma once
-
-#ifndef RAPIDJSON_HAS_STDSTRING
-#define RAPIDJSON_HAS_STDSTRING 1
-#endif
 #include <filesystem>
 #include <fstream>
 #include <functional>
 #include <list>
-#include <rapidjson/document.h>
-#include <rapidjson/error/en.h>
-#include <rapidjson/istreamwrapper.h>
 #include <vector>
+#include <json5cpp.h>
 
 #include "Event.h"
 #include "Math/Vector2.h"
@@ -31,17 +25,12 @@ namespace AdoCpp
 
     class LevelJsonException final : public std::exception
     {
-    private:
-        rapidjson::ParseErrorCode m_code;
-
+        std::string err;
     public:
-        explicit LevelJsonException(const rapidjson::ParseErrorCode code) { m_code = code; }
+        explicit LevelJsonException(const std::string& err) : err(err) {}
         [[nodiscard]] const char* what() const noexcept override
         {
-            const auto msg = new char[256];
-            strcpy_s(msg, 256, "LevelCouldNotOpenFileException: could not open file");
-            strcat_s(msg, 256, rapidjson::GetParseError_En(m_code));
-            return msg;
+            return err.c_str();
         }
     };
 
@@ -115,12 +104,10 @@ namespace AdoCpp
         double zoom = 100;
 
         Settings() = default;
-        explicit Settings(const rapidjson::Value& jsonSettings);
+        explicit Settings(const Json::Value& jsonSettings);
 
-        [[nodiscard]] static Settings fromJson(const rapidjson::Value& jsonSettings);
-        [[nodiscard]] std::unique_ptr<rapidjson::GenericValue<rapidjson::UTF8<>>>
-        intoJson(rapidjson::Document::AllocatorType& alloc) const;
-        [[nodiscard]] std::unique_ptr<rapidjson::Document> intoJson() const;
+        [[nodiscard]] static Settings fromJson(const Json::Value& jsonSettings);
+        [[nodiscard]] Json::Value intoJson() const;
 
         /**
          * Apply the settings to the tile.
@@ -164,7 +151,7 @@ namespace AdoCpp
          * Create a new Level object from json data.
          * @brief Constructor.
          */
-        explicit Level(const rapidjson::Document& document);
+        explicit Level(const Json::Value& value);
         /**
          * Create a new Level object from a file encoded in UTF-8 BOM.
          * @brief Constructor.
@@ -196,9 +183,9 @@ namespace AdoCpp
 
         /**
          * @brief Import json data into the level.
-         * @param document Json data.
+         * @param value Json data.
          */
-        void fromJson(const rapidjson::Document& document);
+        void fromJson(const Json::Value& value);
 
         /**
          * @brief Import a file into the level (encoded in UTF-8 BOM).
@@ -211,8 +198,7 @@ namespace AdoCpp
          */
         void fromFile(const std::filesystem::path& path);
 
-        [[nodiscard]] std::unique_ptr<rapidjson::Value> intoJson(rapidjson::Document::AllocatorType& alloc) const;
-        [[nodiscard]] std::unique_ptr<rapidjson::Document> intoJson() const;
+        [[nodiscard]] Json::Value intoJson() const;
 
         /**
          * @brief Parse the level.

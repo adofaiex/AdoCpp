@@ -6,8 +6,6 @@
 #include <iostream>
 #include <optional>
 #include <ranges>
-#include <rapidjson/document.h>
-#include <rapidjson/prettywriter.h>
 
 #include "Utils.h"
 
@@ -20,98 +18,90 @@ constexpr double positiveRemainder(const double a, const double b)
 
 namespace AdoCpp
 {
-    Settings::Settings(const rapidjson::Value& jsonSettings) { *this = fromJson(jsonSettings); }
-    Settings Settings::fromJson(const rapidjson::Value& jsonSettings)
+    Settings::Settings(const Json::Value& jsonSettings) { *this = fromJson(jsonSettings); }
+    Settings Settings::fromJson(const Json::Value& jsonSettings)
     {
         Settings settings;
 
-        settings.artist = jsonSettings["artist"].GetString();
-        settings.song = jsonSettings["song"].GetString();
-        settings.author = jsonSettings["author"].GetString();
+        settings.artist = jsonSettings["artist"].asString();
+        settings.song = jsonSettings["song"].asString();
+        settings.author = jsonSettings["author"].asString();
         settings.separateCountdownTime = toBool(jsonSettings["separateCountdownTime"]);
-        settings.songFilename = jsonSettings["songFilename"].GetString();
-        settings.bpm = jsonSettings["bpm"].GetDouble();
-        settings.offset = jsonSettings["offset"].GetDouble();
-        settings.pitch = jsonSettings["pitch"].GetDouble();
+        settings.songFilename = jsonSettings["songFilename"].asString();
+        settings.bpm = jsonSettings["bpm"].asDouble();
+        settings.offset = jsonSettings["offset"].asDouble();
+        settings.pitch = jsonSettings["pitch"].asDouble();
 
-        settings.hitsound = cstr2hitsound(jsonSettings["hitsound"].GetString());
+        settings.hitsound = cstr2hitsound(jsonSettings["hitsound"].asCString());
         settings.hitsoundVolume =
-            jsonSettings[jsonSettings.HasMember("hitsoundVolume") ? "hitsoundVolume" : "hitsoundSingle"].GetDouble();
+            jsonSettings[jsonSettings.isMember("hitsoundVolume") ? "hitsoundVolume" : "hitsoundSingle"].asDouble();
 
         settings.countdownTicks =
-            jsonSettings.HasMember("countdownTicks") ? jsonSettings["countdownTicks"].GetDouble() : 4;
+            jsonSettings.isMember("countdownTicks") ? jsonSettings["countdownTicks"].asDouble() : 4;
 
-        settings.trackColorType = cstr2trackColorType(jsonSettings["trackColorType"].GetString());
-        settings.trackColor = Color(jsonSettings["trackColor"].GetString());
-        settings.secondaryTrackColor = Color(jsonSettings["secondaryTrackColor"].GetString());
-        settings.trackColorAnimDuration = jsonSettings["trackColorAnimDuration"].GetDouble();
-        settings.trackColorPulse = cstr2trackColorPulse(jsonSettings["trackColorPulse"].GetString());
-        settings.trackPulseLength = jsonSettings["trackPulseLength"].GetUint();
-        settings.trackStyle = cstr2trackStyle(jsonSettings["trackStyle"].GetString());
+        settings.trackColorType = cstr2trackColorType(jsonSettings["trackColorType"].asCString());
+        settings.trackColor = Color(jsonSettings["trackColor"].asString());
+        settings.secondaryTrackColor = Color(jsonSettings["secondaryTrackColor"].asString());
+        settings.trackColorAnimDuration = jsonSettings["trackColorAnimDuration"].asDouble();
+        settings.trackColorPulse = cstr2trackColorPulse(jsonSettings["trackColorPulse"].asCString());
+        settings.trackPulseLength = jsonSettings["trackPulseLength"].asUInt();
+        settings.trackStyle = cstr2trackStyle(jsonSettings["trackStyle"].asCString());
 
-        settings.trackAnimation = cstr2trackAnimation(jsonSettings["trackAnimation"].GetString());
-        settings.beatsAhead = jsonSettings["beatsAhead"].GetDouble();
+        settings.trackAnimation = cstr2trackAnimation(jsonSettings["trackAnimation"].asCString());
+        settings.beatsAhead = jsonSettings["beatsAhead"].asDouble();
         settings.trackDisappearAnimation =
-            cstr2trackDisappearAnimation(jsonSettings["trackDisappearAnimation"].GetString());
-        settings.beatsBehind = jsonSettings["beatsBehind"].GetDouble();
+            cstr2trackDisappearAnimation(jsonSettings["trackDisappearAnimation"].asCString());
+        settings.beatsBehind = jsonSettings["beatsBehind"].asDouble();
 
-        settings.backgroundColor = Color(jsonSettings["backgroundColor"].GetString());
+        settings.backgroundColor = Color(jsonSettings["backgroundColor"].asString());
 
-        if (jsonSettings.HasMember("unscaledSize"))
-            settings.unscaledSize = jsonSettings["unscaledSize"].GetDouble();
+        if (jsonSettings.isMember("unscaledSize"))
+            settings.unscaledSize = jsonSettings["unscaledSize"].asDouble();
 
-        settings.relativeTo = cstr2relativeToCamera(jsonSettings["relativeTo"].GetString());
-        settings.position = Vector2lf(jsonSettings["position"][0].GetDouble(), jsonSettings["position"][1].GetDouble());
-        settings.rotation = jsonSettings["rotation"].GetDouble();
-        settings.zoom = jsonSettings["zoom"].GetDouble();
+        settings.relativeTo = cstr2relativeToCamera(jsonSettings["relativeTo"].asCString());
+        settings.position = Vector2lf(jsonSettings["position"][0].asDouble(), jsonSettings["position"][1].asDouble());
+        settings.rotation = jsonSettings["rotation"].asDouble();
+        settings.zoom = jsonSettings["zoom"].asDouble();
 
         settings.stickToFloors = toBool(jsonSettings["stickToFloors"]);
 
         return settings;
     }
-    std::unique_ptr<rapidjson::GenericValue<rapidjson::UTF8<>>>
-    Settings::intoJson(rapidjson::Document::AllocatorType& alloc) const
+    Json::Value Settings::intoJson() const
     {
-        auto val = std::make_unique<rapidjson::Value>(rapidjson::kObjectType);
-        val->AddMember("version", 15, alloc)
-            .AddMember("artist", artist, alloc)
-            .AddMember("song", song, alloc)
-            .AddMember("author", author, alloc)
-            .AddMember("separateCountdownTime", separateCountdownTime, alloc)
-            .AddMember("countdownTicks", countdownTicks, alloc)
-            .AddMember("songFilename", songFilename, alloc)
-            .AddMember("bpm", bpm, alloc)
-            .AddMember("volume", volume, alloc)
-            .AddMember("offset", offset, alloc)
-            .AddMember("pitch", pitch, alloc)
-            .AddMember("hitsound", rapidjson::StringRef(hitsound2cstr(hitsound)), alloc)
-            .AddMember("hitsoundVolume", hitsoundVolume, alloc)
-            .AddMember("trackColorType", rapidjson::StringRef(trackColorType2cstr(trackColorType)), alloc)
-            .AddMember("trackColor", trackColor.toString(false, false, Color::ToStringAlphaMode::Auto), alloc)
-            .AddMember("secondaryTrackColor", trackColor.toString(false, false, Color::ToStringAlphaMode::Auto), alloc)
-            .AddMember("trackColorAnimDuration", trackColorAnimDuration, alloc)
-            .AddMember("trackColorPulse", rapidjson::StringRef(trackColorPulse2cstr(trackColorPulse)), alloc)
-            .AddMember("trackPulseLength", trackPulseLength, alloc)
-            .AddMember("trackStyle", rapidjson::StringRef(trackStyle2cstr(trackStyle)), alloc)
-            .AddMember("trackAnimation", rapidjson::StringRef(trackAnimation2cstr(trackAnimation)), alloc)
-            .AddMember("beatsAhead", beatsAhead, alloc)
-            .AddMember("trackDisappearAnimation",
-                       rapidjson::StringRef(trackDisappearAnimation2cstr(trackDisappearAnimation)), alloc)
-            .AddMember("beatsBehind", beatsBehind, alloc)
-            .AddMember("backgroundColor", backgroundColor.toString(false, false, Color::ToStringAlphaMode::Auto), alloc)
-            .AddMember("stickToFloors", stickToFloors, alloc);
-        // val->AddMember("unscaledSize", unscaledSize, alloc);
-        val->AddMember("relativeTo", rapidjson::StringRef(relativeToCamera2cstr(relativeTo)), alloc);
-        rapidjson::Value vPos(rapidjson::kArrayType);
-        vPos.PushBack(position.x, alloc), vPos.PushBack(position.y, alloc);
-        val->AddMember("position", vPos, alloc).AddMember("rotation", rotation, alloc).AddMember("zoom", zoom, alloc);
+        Json::Value val(Json::objectValue);
+        val["version"] = version;
+        val["artist"] = artist;
+        val["song"] = song;
+        val["author"] = author;
+        val["separateCountdownTime"] = separateCountdownTime;
+        val["songFilename"] = songFilename;
+        val["bpm"] = bpm;
+        val["offset"] = offset;
+        val["pitch"] = pitch;
+        val["hitsound"] = hitsound2cstr(hitsound);
+        val["hitsoundVolume"] = hitsoundVolume;
+        val["countdownTicks"] = countdownTicks;
+        val["trackColorType"] = trackColorType2cstr(trackColorType);
+        val["trackColor"] = trackColor.toString(false, false, Color::ToStringAlphaMode::Auto);
+        val["secondaryTrackColor"] = secondaryTrackColor.toString(false, false, Color::ToStringAlphaMode::Auto);
+        val["trackColorAnimDuration"] = trackColorAnimDuration;
+        val["trackColorPulse"] = trackColorPulse2cstr(trackColorPulse);
+        val["trackPulseLength"] = trackPulseLength;
+        val["trackStyle"] = trackStyle2cstr(trackStyle);
+        val["trackAnimation"] = trackAnimation2cstr(trackAnimation);
+        val["beatsAhead"] = beatsAhead;
+        val["trackDisappearAnimation"] = trackDisappearAnimation2cstr(trackDisappearAnimation);
+        val["beatsBehind"] = beatsBehind;
+        val["backgroundColor"] = backgroundColor.toString(false, false, Color::ToStringAlphaMode::Auto);
+        val["stickToFloors"] = stickToFloors;
+        val["relativeTo"] = relativeToCamera2cstr(relativeTo);
+        Json::Value vPos(Json::arrayValue);
+        vPos.append(position.x), vPos.append(position.y);
+        val["position"] = vPos;
+        val["rotation"] = rotation;
+        val["zoom"] = zoom;
         return val;
-    }
-    std::unique_ptr<rapidjson::Document> Settings::intoJson() const
-    {
-        auto doc = std::make_unique<rapidjson::Document>();
-        doc->CopyFrom(*intoJson(doc->GetAllocator()), doc->GetAllocator());
-        return doc;
     }
     void Settings::apply(Tile& tile) const
     {
@@ -134,7 +124,7 @@ namespace AdoCpp
         // clang-format on
     }
 
-    Level::Level(const rapidjson::Document& document) { fromJson(document); }
+    Level::Level(const Json::Value& value) { fromJson(value); }
 
     Level::Level(std::ifstream& ifs) { fromFile(ifs); }
 
@@ -162,27 +152,27 @@ namespace AdoCpp
         parse();
         update();
     }
-    void Level::fromJson(const rapidjson::Document& document)
+    void Level::fromJson(const Json::Value& value)
     {
         clear();
-        assert(document.IsObject());
+        assert(value.isObject());
 
         tiles.emplace_back(0);
-        if (document.HasMember("angleData"))
+        if (value.isMember("angleData"))
         {
-            for (const auto& angle : document["angleData"].GetArray())
-                tiles.emplace_back(angle.GetDouble());
+            for (const auto& angle : value["angleData"])
+                tiles.emplace_back(angle.asDouble());
         }
         else
         {
-            assert(document.HasMember("pathData") && "The json must have either 'angleData' or 'pathData'");
-            for (const auto& path : std::string(document["pathData"].GetString()))
+            assert(value.isMember("pathData") && "The json must have either 'angleData' or 'pathData'");
+            for (const auto& path : std::string(value["pathData"].asString()))
                 tiles.emplace_back(path2angle(path));
         }
 
-        settings = Settings::fromJson(document["settings"]);
+        settings = Settings::fromJson(value["settings"]);
 
-        for (const auto& eventData : document["actions"].GetArray())
+        for (const auto& eventData : value["actions"])
         {
             try
             {
@@ -198,17 +188,22 @@ namespace AdoCpp
 
     void Level::fromFile(std::ifstream& ifs)
     {
-        rapidjson::Document document;
-        rapidjson::IStreamWrapper isw(ifs);
-        rapidjson::AutoUTFInputStream<unsigned, rapidjson::IStreamWrapper> eis(isw);
-        document.ParseStream<rapidjson::kParseValidateEncodingFlag | rapidjson::kParseCommentsFlag |
-                                 rapidjson::kParseTrailingCommasFlag | rapidjson::kParseNanAndInfFlag
-                             //| rapidjson::kParseFullPrecisionFlag
-                             ,
-                             rapidjson::AutoUTF<unsigned>>(eis);
-        if (document.HasParseError())
-            throw LevelJsonException(document.GetParseError());
-        fromJson(document);
+    //     rapidjson::value value;
+    //     rapidjson::IStreamWrapper isw(ifs);
+    //     rapidjson::AutoUTFInputStream<unsigned, rapidjson::IStreamWrapper> eis(isw);
+    //     value.ParseStream<rapidjson::kParseValidateEncodingFlag | rapidjson::kParseCommentsFlag |
+    //                              rapidjson::kParseTrailingCommasFlag | rapidjson::kParseNanAndInfFlag
+    //                          //| rapidjson::kParseFullPrecisionFlag
+    //                          ,
+    //                          rapidjson::AutoUTF<unsigned>>(eis);
+    //     if (value.HasParseError())
+    //         throw LevelJsonException(value.asParseError());
+        Json::Value value;
+        std::string err;
+        bool success = Json5::parse(ifs, value, &err);
+        if (!success)
+            throw LevelJsonException(err);
+        fromJson(value);
     }
 
     void Level::fromFile(const std::filesystem::path& path)
@@ -219,43 +214,37 @@ namespace AdoCpp
         fromFile(ifs);
         ifs.close();
     }
-    std::unique_ptr<rapidjson::Value> Level::intoJson(rapidjson::Document::AllocatorType& alloc) const
+    Json::Value Level::intoJson() const
     {
-        auto val = std::make_unique<rapidjson::Value>(rapidjson::kObjectType);
+        auto val = Json::Value(Json::objectValue);
         {
-            rapidjson::Value angleData(rapidjson::kArrayType);
+            Json::Value angleData(Json::arrayValue);
             for (size_t i = 1; i < tiles.size(); i++)
             {
                 if (const auto& tile = tiles[i]; static_cast<int>(tile.angle.deg()) == tile.angle.deg())
-                    angleData.PushBack(static_cast<int>(tile.angle.deg()), alloc);
+                    angleData.append(static_cast<int>(tile.angle.deg()));
                 else
-                    angleData.PushBack(tile.angle.deg(), alloc);
+                    angleData.append(tile.angle.deg());
             }
-            val->AddMember("angleData", angleData, alloc);
+            val["angleData"] = angleData;
         }
         {
-            val->AddMember("settings", *settings.intoJson(alloc), alloc);
+            val["settings"] = settings.intoJson();
         }
         {
-            rapidjson::Value actions(rapidjson::kArrayType);
+            Json::Value actions(Json::arrayValue);
             for (const auto& tile : tiles)
                 for (const auto& event : tile.events)
-                    actions.PushBack(*event->intoJson(alloc), alloc);
+                    actions.append(event->intoJson());
 
-            val->AddMember("actions", actions, alloc);
+            val["actions"] = actions;
         }
         {
-            rapidjson::Value decorations(rapidjson::kArrayType);
-            val->AddMember("decorations", decorations, alloc);
+            Json::Value decorations(Json::arrayValue);
+            val["decorations"] = decorations;
         }
 
         return val;
-    }
-    std::unique_ptr<rapidjson::Document> Level::intoJson() const
-    {
-        auto doc = std::make_unique<rapidjson::Document>();
-        doc->CopyFrom(*intoJson(doc->GetAllocator()), doc->GetAllocator());
-        return doc;
     }
 
     void Level::parse(const size_t floorStart, const bool basic, const bool force)

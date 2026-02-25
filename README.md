@@ -9,7 +9,7 @@ AdoCpp is an ADOFAI level parser and generator for C++.
 AdoCpp uses following software as its dependencies:
 
 - CMake as a general build tool
-- Rapidjson to parse JSON files
+- JsonCpp & Json5Cpp to parse JSON files
 - (optional) Doxygen to build documentation
 
 ### Usage at a glance
@@ -60,7 +60,7 @@ int main()
     level.tiles[2].events.push_back(twirl); // Add an event to the tile.
 
     // 8. Export the level as JSON (needn't parse).
-    std::unique_ptr<rapidjson::Document> doc = level.intoJson();
+    Json::Value doc = level.intoJson();
     
     return 0;
 }

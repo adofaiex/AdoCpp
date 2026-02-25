@@ -1,3 +1,5 @@
+include(${PROJECT_SOURCE_DIR}/GetJsonCpp.cmake)
+
 add_library(
         AdoCpp STATIC
         src/AdoCpp.h
@@ -24,6 +26,11 @@ add_library(
         src/AdoCpp/Math/Angle.inl
         src/AdoCpp/Camera.h
         src/AdoCpp/Camera.cpp
+
+        include/json5cpp.h
 )
-target_include_directories(AdoCpp PRIVATE src/)
-target_link_libraries(AdoCpp PRIVATE rapidjson::rapidjson)
+target_include_directories(AdoCpp PRIVATE
+        src/
+        include/
+)
+target_link_libraries(AdoCpp PRIVATE jsoncpp::jsoncpp)

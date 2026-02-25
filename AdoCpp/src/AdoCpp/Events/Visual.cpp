@@ -2,43 +2,44 @@
 
 namespace AdoCpp::Event::Visual
 {
-    MoveCamera::MoveCamera(const rapidjson::Value& data) : DynamicEvent(data)
+    MoveCamera::MoveCamera(const Json::Value& data) : DynamicEvent(data)
     {
-        duration = data["duration"].GetDouble();
-        if (data.HasMember("relativeTo"))
-            relativeTo = cstr2relativeToCamera(data["relativeTo"].GetString());
-        if (data.HasMember("position"))
+        duration = data["duration"].asDouble();
+        if (data.isMember("relativeTo"))
+            relativeTo = cstr2relativeToCamera(data["relativeTo"].asCString());
+        if (data.isMember("position"))
         {
-            if (!data["position"][0].IsNull())
-                position.first = data["position"][0].GetDouble();
-            if (!data["position"][1].IsNull())
-                position.second = data["position"][1].GetDouble();
+            if (!data["position"][0].isNull())
+                position.first = data["position"][0].asDouble();
+            if (!data["position"][1].isNull())
+                position.second = data["position"][1].asDouble();
         }
-        if (data.HasMember("rotation"))
-            rotation = data["rotation"].GetDouble();
-        if (data.HasMember("zoom"))
-            zoom = data["zoom"].GetDouble();
-        ease = cstr2easing(data["ease"].GetString());
+        if (data.isMember("rotation"))
+            rotation = data["rotation"].asDouble();
+        if (data.isMember("zoom"))
+            zoom = data["zoom"].asDouble();
+        ease = cstr2easing(data["ease"].asCString());
     }
-    std::unique_ptr<rapidjson::Value> MoveCamera::intoJson(rapidjson::Document::AllocatorType& alloc) const
+    Json::Value MoveCamera::intoJson() const
     {
-        auto val = std::make_unique<rapidjson::Value>(rapidjson::kObjectType);
-        val->AddMember("floor", floor, alloc).AddMember("eventType", rapidjson::StringRef(name()), alloc);
+        Json::Value val(Json::objectValue);
+        val["floor"] = floor;
+        val["eventType"] = name();
         if (!active)
-            val->AddMember("active", active, alloc);
-        autoRemoveDecimalPart(*val, "duration", duration, alloc);
+            val["active"] = active;
+        autoRemoveDecimalPart(val, "duration", duration);
         if (relativeTo)
-            val->AddMember("relativeTo", rapidjson::StringRef(relativeToCamera2cstr(*relativeTo)), alloc);
+            val["relativeTo"] = relativeToCamera2cstr(*relativeTo);
         // ReSharper disable once CppLocalVariableMayBeConst
-        if (auto op = optionalPoint2json(position, alloc); op)
-            val->AddMember("position", *op, alloc);
+        if (auto op = optionalPoint2json(position); op)
+            val["position"] = *op;
         if (rotation)
-            autoRemoveDecimalPart(*val, "rotation", *rotation, alloc);
+            autoRemoveDecimalPart(val, "rotation", *rotation);
         if (zoom)
-            autoRemoveDecimalPart(*val, "zoom", *zoom, alloc);
-        val->AddMember("ease", rapidjson::StringRef(easing2cstr(ease)), alloc);
-        autoRemoveDecimalPart(*val, "angleOffset", angleOffset, alloc);
-        addTag(*val, eventTag, alloc);
+            autoRemoveDecimalPart(val, "zoom", *zoom);
+        val["ease"] = easing2cstr(ease);
+        autoRemoveDecimalPart(val, "angleOffset", angleOffset);
+        addTag(val, eventTag);
         return val;
     }
 } // namespace AdoCpp::Event::Visual

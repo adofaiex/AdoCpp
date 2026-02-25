@@ -14,12 +14,12 @@ namespace AdoCpp::Event::GamePlay
             Multiplier
         };
         SetSpeed() = default;
-        explicit SetSpeed(const rapidjson::Value& data);
+        explicit SetSpeed(const Json::Value& data);
         [[nodiscard]] constexpr bool stackable() const noexcept override { return true; }
         [[nodiscard]] constexpr const char* name() const noexcept override { return "SetSpeed"; }
         [[nodiscard]] constexpr SetSpeed* clone() const override { return new SetSpeed(*this); }
-        [[nodiscard]] std::unique_ptr<rapidjson::Value>
-        intoJson(rapidjson::Document::AllocatorType& alloc) const override;
+        [[nodiscard]] Json::Value
+        intoJson() const override;
         SpeedType speedType = SpeedType::Bpm;
         double beatsPerMinute = 100;
         double bpmMultiplier = 1;
@@ -28,23 +28,23 @@ namespace AdoCpp::Event::GamePlay
     {
     public:
         Twirl() = default;
-        explicit Twirl(const rapidjson::Value& data);
+        explicit Twirl(const Json::Value& data);
         [[nodiscard]] constexpr bool stackable() const noexcept override { return false; }
         [[nodiscard]] constexpr const char* name() const noexcept override { return "Twirl"; }
         [[nodiscard]] constexpr Twirl* clone() const override { return new Twirl(*this); }
-        [[nodiscard]] std::unique_ptr<rapidjson::Value>
-        intoJson(rapidjson::Document::AllocatorType& alloc) const override;
+        [[nodiscard]] Json::Value
+        intoJson() const override;
     };
     class Pause final : public StaticEvent
     {
     public:
         Pause() = default;
-        explicit Pause(const rapidjson::Value& data);
+        explicit Pause(const Json::Value& data);
         [[nodiscard]] constexpr bool stackable() const noexcept override { return false; };
         [[nodiscard]] constexpr const char* name() const noexcept override { return "Pause"; };
         [[nodiscard]] constexpr Pause* clone() const override { return new Pause(*this); }
-        [[nodiscard]] std::unique_ptr<rapidjson::Value>
-        intoJson(rapidjson::Document::AllocatorType& alloc) const override;
+        [[nodiscard]] Json::Value
+        intoJson() const override;
         double duration = 0;
         double countdownTicks = 0;
         enum class AngleCorrectionDir
@@ -64,12 +64,12 @@ namespace AdoCpp::Event::GamePlay
             Midspin
         };
         SetHitsound() = default;
-        explicit SetHitsound(const rapidjson::Value& data);
+        explicit SetHitsound(const Json::Value& data);
         [[nodiscard]] constexpr bool stackable() const noexcept override { return false; }
         [[nodiscard]] constexpr const char* name() const noexcept override { return "SetHitsound"; }
         [[nodiscard]] constexpr SetHitsound* clone() const override { return new SetHitsound(*this); }
-        [[nodiscard]] std::unique_ptr<rapidjson::Value>
-        intoJson(rapidjson::Document::AllocatorType& alloc) const override;
+        [[nodiscard]] Json::Value
+        intoJson() const override;
         GameSound gameSound = GameSound::Hitsound;
         Hitsound hitsound = Hitsound::Kick;
         double hitsoundVolume = 100;
@@ -83,12 +83,12 @@ namespace AdoCpp::Event::GamePlay
             Mirror
         };
         SetPlanetRotation() = default;
-        explicit SetPlanetRotation(const rapidjson::Value& data);
+        explicit SetPlanetRotation(const Json::Value& data);
         [[nodiscard]] constexpr bool stackable() const noexcept override { return false; };
         [[nodiscard]] constexpr const char* name() const noexcept override { return "SetPlanetRotation"; };
         [[nodiscard]] constexpr SetPlanetRotation* clone() const override { return new SetPlanetRotation(*this); }
-        [[nodiscard]] std::unique_ptr<rapidjson::Value>
-        intoJson(rapidjson::Document::AllocatorType& alloc) const override;
+        [[nodiscard]] Json::Value
+        intoJson() const override;
         Easing ease = Easing::Linear;
         uint64_t easeParts = 1;
         EasePartBehavior easePartBehavior = EasePartBehavior::Repeat;

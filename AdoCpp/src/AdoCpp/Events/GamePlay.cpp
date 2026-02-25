@@ -1,54 +1,55 @@
 #include "GamePlay.h"
 #include <cstring>
-#include "rapidjson/document.h"
 
 namespace AdoCpp::Event::GamePlay
 {
-    SetSpeed::SetSpeed(const rapidjson::Value& data) : DynamicEvent(data)
+    SetSpeed::SetSpeed(const Json::Value& data) : DynamicEvent(data)
     {
-        beatsPerMinute = data["beatsPerMinute"].GetDouble();
-        if (!data.HasMember("speedType"))
+        beatsPerMinute = data["beatsPerMinute"].asDouble();
+        if (!data.isMember("speedType"))
         {
             speedType = SpeedType::Bpm;
             return;
         }
-        if (strcmp(data["speedType"].GetString(), "Bpm") == 0)
+        if (strcmp(data["speedType"].asCString(), "Bpm") == 0)
             speedType = SpeedType::Bpm;
-        else if (strcmp(data["speedType"].GetString(), "Multiplier") == 0)
+        else if (strcmp(data["speedType"].asCString(), "Multiplier") == 0)
             speedType = SpeedType::Multiplier;
         else
             throw std::invalid_argument("Invalid speedType");
-        bpmMultiplier = data["bpmMultiplier"].GetDouble();
+        bpmMultiplier = data["bpmMultiplier"].asDouble();
     }
-    std::unique_ptr<rapidjson::Value> SetSpeed::intoJson(rapidjson::Document::AllocatorType& alloc) const
+    Json::Value SetSpeed::intoJson() const
     {
-        auto val = std::make_unique<rapidjson::Value>(rapidjson::kObjectType);
-        val->AddMember("floor", floor, alloc).AddMember("eventType", rapidjson::StringRef(name()), alloc);
+        Json::Value val(Json::objectValue);
+        val["floor"] = floor;
+        val["eventType"] = name();
 
         if (speedType == SpeedType::Bpm)
-            val->AddMember("speedType", "Bpm", alloc);
+            val["speedType"] = "Bpm";
         else
-            val->AddMember("speedType", "Multiplier", alloc);
-        autoRemoveDecimalPart(*val, "beatsPerMinute", beatsPerMinute, alloc);
-        autoRemoveDecimalPart(*val, "bpmMultiplier", bpmMultiplier, alloc);
-        autoRemoveDecimalPart(*val, "angleOffset", angleOffset, alloc);
+            val["speedType"] = "Multiplier";
+        autoRemoveDecimalPart(val, "beatsPerMinute", beatsPerMinute);
+        autoRemoveDecimalPart(val, "bpmMultiplier", bpmMultiplier);
+        autoRemoveDecimalPart(val, "angleOffset", angleOffset);
         return val;
     }
-    Twirl::Twirl(const rapidjson::Value& data) : StaticEvent(data) {}
+    Twirl::Twirl(const Json::Value& data) : StaticEvent(data) {}
 
-    std::unique_ptr<rapidjson::Value> Twirl::intoJson(rapidjson::Document::AllocatorType& alloc) const
+    Json::Value Twirl::intoJson() const
     {
-        auto val = std::make_unique<rapidjson::Value>(rapidjson::kObjectType);
-        val->AddMember("floor", floor, alloc).AddMember("eventType", rapidjson::StringRef(name()), alloc);
+        Json::Value val(Json::objectValue);
+        val["floor"] = floor;
+        val["eventType"] = name();
         return val;
     }
-    Pause::Pause(const rapidjson::Value& data) : StaticEvent(data)
+    Pause::Pause(const Json::Value& data) : StaticEvent(data)
     {
-        duration = data["duration"].GetDouble();
-        countdownTicks = data["countdownTicks"].GetDouble();
-        if (data["angleCorrectionDir"].IsString())
+        duration = data["duration"].asDouble();
+        countdownTicks = data["countdownTicks"].asDouble();
+        if (data["angleCorrectionDir"].isString())
         {
-            if (const char* const str = data["angleCorrectionDir"].GetString(); strcmp(str, "Backward") == 0)
+            if (const char* const str = data["angleCorrectionDir"].asCString(); strcmp(str, "Backward") == 0)
                 angleCorrectionDir = AngleCorrectionDir::Backward;
             else if (strcmp(str, "None") == 0)
                 angleCorrectionDir = AngleCorrectionDir::None;
@@ -59,72 +60,75 @@ namespace AdoCpp::Event::GamePlay
         }
         else
         {
-            if (const int dir = data["angleCorrectionDir"].GetInt(); -1 <= dir && dir <= 1)
-                angleCorrectionDir = static_cast<AngleCorrectionDir>(data["angleCorrectionDir"].GetInt());
+            if (const int dir = data["angleCorrectionDir"].asInt(); -1 <= dir && dir <= 1)
+                angleCorrectionDir = static_cast<AngleCorrectionDir>(data["angleCorrectionDir"].asInt());
             else
                 throw std::invalid_argument("Invalid angleCorrectionDir");
         }
     }
-    std::unique_ptr<rapidjson::Value> Pause::intoJson(rapidjson::Document::AllocatorType& alloc) const
+    Json::Value Pause::intoJson() const
     {
-        auto val = std::make_unique<rapidjson::Value>(rapidjson::kObjectType);
-        val->AddMember("floor", floor, alloc).AddMember("eventType", rapidjson::StringRef(name()), alloc);
-        autoRemoveDecimalPart(*val, "duration", duration, alloc);
-        autoRemoveDecimalPart(*val, "countdownTicks", countdownTicks, alloc);
+        Json::Value val(Json::objectValue);
+        val["floor"] = floor;
+        val["eventType"] = name();
+        autoRemoveDecimalPart(val, "duration", duration);
+        autoRemoveDecimalPart(val, "countdownTicks", countdownTicks);
         if (angleCorrectionDir == AngleCorrectionDir::None)
-            val->AddMember("angleCorrectionDir", "None", alloc);
+            val["angleCorrectionDir"] = "None";
         else if (angleCorrectionDir == AngleCorrectionDir::Forward)
-            val->AddMember("angleCorrectionDir", "Forward", alloc);
+            val["angleCorrectionDir"] = "Forward";
         else
-            val->AddMember("angleCorrectionDir", "Backward", alloc);
+            val["angleCorrectionDir"] = "Backward";
         return val;
     }
-    SetHitsound::SetHitsound(const rapidjson::Value& data)
+    SetHitsound::SetHitsound(const Json::Value& data)
     {
-        if (!data.HasMember("gameSound") || !strcmp(data["gameSound"].GetString(), "Hitsound"))
+        if (!data.isMember("gameSound") || !strcmp(data["gameSound"].asCString(), "Hitsound"))
             gameSound = GameSound::Hitsound;
-        else if (!strcmp(data["gameSound"].GetString(), "Midspin"))
+        else if (!strcmp(data["gameSound"].asCString(), "Midspin"))
             gameSound = GameSound::Midspin;
         else
             throw std::invalid_argument("Invalid gameSound");
-        hitsound = cstr2hitsound(data["hitsound"].GetString());
-        hitsoundVolume = data["hitsoundVolume"].GetDouble();
+        hitsound = cstr2hitsound(data["hitsound"].asCString());
+        hitsoundVolume = data["hitsoundVolume"].asDouble();
     }
-    std::unique_ptr<rapidjson::Value> SetHitsound::intoJson(rapidjson::Document::AllocatorType& alloc) const
+    Json::Value SetHitsound::intoJson() const
     {
-        auto val = std::make_unique<rapidjson::Value>(rapidjson::kObjectType);
-        val->AddMember("floor", floor, alloc).AddMember("eventType", rapidjson::StringRef(name()), alloc);
+        Json::Value val(Json::objectValue);
+        val["floor"] = floor;
+        val["eventType"] = name();
 
         if (gameSound == GameSound::Hitsound)
-            val->AddMember("gameSound", "Hitsound", alloc);
+            val["gameSound"] = "Hitsound";
         else if (gameSound == GameSound::Midspin)
-            val->AddMember("gameSound", "Midspin", alloc);
-        val->AddMember("hitsound", rapidjson::StringRef(hitsound2cstr(hitsound)), alloc);
-        autoRemoveDecimalPart(*val, "hitsoundVolume", hitsoundVolume, alloc);
+            val["gameSound"] = "Midspin";
+        val["hitsound"] = hitsound2cstr(hitsound);
+        autoRemoveDecimalPart(val, "hitsoundVolume", hitsoundVolume);
         return val;
     }
 
-    SetPlanetRotation::SetPlanetRotation(const rapidjson::Value& data) : StaticEvent(data)
+    SetPlanetRotation::SetPlanetRotation(const Json::Value& data) : StaticEvent(data)
     {
-        ease = cstr2easing(data["ease"].GetString());
-        easeParts = data["easeParts"].GetUint64();
+        ease = cstr2easing(data["ease"].asCString());
+        easeParts = data["easeParts"].asUInt64();
         easePartBehavior =
-            !data.HasMember("easePartBehavior") || !strcmp(data["easePartBehavior"].GetString(), "Repeat")
+            !data.isMember("easePartBehavior") || !strcmp(data["easePartBehavior"].asCString(), "Repeat")
             ? EasePartBehavior::Repeat
             : EasePartBehavior::Mirror;
     }
-    std::unique_ptr<rapidjson::Value> SetPlanetRotation::intoJson(rapidjson::Document::AllocatorType& alloc) const
+    Json::Value SetPlanetRotation::intoJson() const
     {
-        auto val = std::make_unique<rapidjson::Value>(rapidjson::kObjectType);
-        val->AddMember("floor", floor, alloc).AddMember("eventType", rapidjson::StringRef(name()), alloc);
+        Json::Value val(Json::objectValue);
+        val["floor"] = floor;
+        val["eventType"] = name();
         if (!active)
-            val->AddMember("active", active, alloc);
-        val->AddMember("ease", rapidjson::StringRef(easing2cstr(ease)), alloc);
-        val->AddMember("easeParts", easeParts, alloc);
+            val["active"] = active;
+        val["ease"] = easing2cstr(ease);
+        val["easeParts"] = easeParts;
         if (easePartBehavior == EasePartBehavior::Repeat)
-            val->AddMember("easePartBehavior", "Repeat", alloc);
+            val["easePartBehavior"] = "Repeat";
         else if (easePartBehavior == EasePartBehavior::Mirror)
-            val->AddMember("easePartBehavior", "Mirror", alloc);
+            val["easePartBehavior"] = "Mirror";
         return val;
     }
 } // namespace AdoCpp::Event::GamePlay

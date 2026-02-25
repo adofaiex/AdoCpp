@@ -2,19 +2,20 @@
 
 namespace AdoCpp::Event::Dlc
 {
-    Hold::Hold(const rapidjson::Value& data) : StaticEvent(data)
+    Hold::Hold(const Json::Value& data) : StaticEvent(data)
     {
-        duration = data["duration"].GetDouble();
-        distanceMultiplier = data["distanceMultiplier"].GetDouble();
-        landingAnimation = data["landingAnimation"].GetBool();
+        duration = data["duration"].asDouble();
+        distanceMultiplier = data["distanceMultiplier"].asDouble();
+        landingAnimation = data["landingAnimation"].asBool();
     }
-    std::unique_ptr<rapidjson::Value> Hold::intoJson(rapidjson::Document::AllocatorType& alloc) const
+    Json::Value Hold::intoJson() const
     {
-        auto val = std::make_unique<rapidjson::Value>(rapidjson::kObjectType);
-        val->AddMember("floor", floor, alloc).AddMember("eventType", rapidjson::StringRef(name()), alloc);
-        autoRemoveDecimalPart(*val, "duration", duration, alloc);
-        autoRemoveDecimalPart(*val, "distanceMultiplier", distanceMultiplier, alloc);
-        val->AddMember("landingAnimation", landingAnimation, alloc);
+        Json::Value val(Json::objectValue);
+        val["floor"] = floor;
+        val["eventType"] = name();
+        autoRemoveDecimalPart(val, "duration", duration);
+        autoRemoveDecimalPart(val, "distanceMultiplier", distanceMultiplier);
+        val["landingAnimation"] = landingAnimation;
         return val;
     }
 } // namespace AdoCpp::Event::Dlc

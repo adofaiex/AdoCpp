@@ -2,23 +2,17 @@
 
 namespace AdoCpp::Event
 {
-    Event::Event(const rapidjson::Value& data)
+    Event::Event(const Json::Value& data)
     {
-        floor = data["floor"].GetUint64();
-        active = !data.HasMember("active") || toBool(data["active"]);
+        floor = data["floor"].asUInt64();
+        active = !data.isMember("active") || toBool(data["active"]);
     }
-    std::unique_ptr<rapidjson::Document> Event::intoJson() const
+    StaticEvent::StaticEvent(const Json::Value& data) : Event(data) {}
+    DynamicEvent::DynamicEvent(const Json::Value& data) : Event(data)
     {
-        auto doc = std::make_unique<rapidjson::Document>();
-        doc->CopyFrom(*intoJson(doc->GetAllocator()), doc->GetAllocator());
-        return doc;
-    }
-    StaticEvent::StaticEvent(const rapidjson::Value& data) : Event(data) {}
-    DynamicEvent::DynamicEvent(const rapidjson::Value& data) : Event(data)
-    {
-        if (data.HasMember("angleOffset"))
-            angleOffset = data["angleOffset"].GetDouble();
-        if (data.HasMember("eventTag"))
-            eventTag = cstr2tags(data["eventTag"].GetString());
+        if (data.isMember("angleOffset"))
+            angleOffset = data["angleOffset"].asDouble();
+        if (data.isMember("eventTag"))
+            eventTag = cstr2tags(data["eventTag"].asCString());
     }
 } // namespace AdoCpp::Event
