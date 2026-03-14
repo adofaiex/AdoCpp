@@ -3,25 +3,25 @@
 
 namespace AdoCpp
 {
-    struct MoveCameraData
-    {
-        size_t floor;
-        double angleOffset;
-        double beat;
-        double seconds;
-        double duration;
-        std::optional<RelativeToCamera> relativeTo;
-        bool duplicatedRelPlayer;
-        double relEndSec;
-        std::optional<Vector2lf> playerLastPos;
-        OptionalPoint position;
-        double xEndSec;
-        double yEndSec;
-        std::optional<double> rotation;
-        double rotEndSec;
-        std::optional<double> zoom;
-        double zoomEndSec;
+    struct State {
+        bool active = false;
+        double startSec = 0;
+        double durationSec = 0; // measured in seconds
         Easing ease;
+    };
+    struct CameraTransition
+    {
+        // notice that x and y are position offset, not position
+        double fromX, toX;
+        State xState;
+        double fromY, toY;
+        State yState;
+        double fromRotation, toRotation;
+        State rotationState;
+        double fromZoom, toZoom;
+        State zoomState;
+        double fromPlayer, toPlayer;
+        State relativeToState;
     };
 
     class Camera
@@ -29,17 +29,23 @@ namespace AdoCpp
     public:
         Camera() = default;
         ~Camera() = default;
-        void init(Level& level);
+        void init(const Level& level);
+        void processEvent(const Level& level, const Event::Visual::MoveCamera& moveCamera, double seconds);
         void update(const Level& level, double seconds, size_t floor);
         Vector2lf position;
         double rotation{};
         double zoom = 100;
     private:
-        std::vector<MoveCameraData> m_moveCameraDatas;
-        Vector2lf player;
+        void handleTransition(const double seconds, double& var, const double fromVar, const double toVar, State& state);
+        Vector2lf positionOffset;
         double lastSeconds = std::numeric_limits<double>::lowest();
-        size_t lastFloor{};
-        Vector2lf lastChangedPos;
-        size_t lastEventIndex{};
+        std::vector<Event::Visual::MoveCamera> timeline;
+        std::optional<size_t> timelineIndex;
+        Vector2lf lastPlayerChangedPos;
+        size_t lastFloor;
+        RelativeToCamera relativeTo;
+        size_t anchorFloor;
+        CameraTransition transition;
+        double player;
     };
 }

@@ -300,6 +300,9 @@ namespace AdoCpp
         template <class Val, class Pred>
         auto speedDataUpperBound(Val val, Pred pred) const;
 
+        template <class Val, class Pred>
+        auto speedDataLowerBound(Val val, Pred pred) const;
+
         /**
          * @brief Get the bpm.
          * @param func The bool function.

@@ -367,12 +367,12 @@ void StatePlaying::render()
         ImGui::Text("FPS: %.0f avg, %.0f min, %.0f max", game->avgFps, game->minFps, game->maxFps);
         static double progress, bpm, kps;
         progress = 100 * static_cast<double>(playerTileIndex) / static_cast<double>(tiles.size() - 1);
-        bpm = game->level.getBpmByBeat(beat);
+        bpm = game->level.getBpmByBeat(game->level.tiles[playerTileIndex].beat);
         kps = bpm / 60 / (game->level.getAngle(playerTileIndex + (playerTileIndex + 1 == tiles.size() ? 0 : 1)).deg() / 180);
         ImGui::Text("Progress: %.2f%%", progress);
         ImGui::Text("BPM: %.2f", bpm);
         ImGui::Text("KPS: %.2f", kps);
-        ImGui::Text("Floor: %llu", currentTileIndex);
+        ImGui::Text("Floor: %llu", playerTileIndex);
         using enum AdoCpp::HitMargin;
         const float p = hitCounts[(int)Perfect], ep = hitCounts[(int)EarlyPerfect], lp = hitCounts[(int)LatePerfect],
                     ve = hitCounts[(int)VeryEarly], vl = hitCounts[(int)VeryLate], te = hitCounts[(int)TooEarly],

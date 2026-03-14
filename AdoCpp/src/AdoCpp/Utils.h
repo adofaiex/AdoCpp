@@ -127,9 +127,10 @@ namespace AdoCpp
         Player,
         Tile,
         Global,
-        LastPosition
+        LastPosition,
+        LastPositionNoRotation
     };
-    constexpr const char* const cstrRelativeToCamera[] = {"Player", "Tile", "Global", "LastPosition"};
+    constexpr const char* const cstrRelativeToCamera[] = {"Player", "Tile", "Global", "LastPosition", "LastPositionNoRotation"};
     constexpr RelativeToCamera cstr2relativeToCamera(const char* const cstr)
     {
         for (int i = 0; i < std::size(cstrRelativeToCamera); ++i)

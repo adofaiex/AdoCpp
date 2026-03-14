@@ -432,12 +432,19 @@ namespace AdoCpp
         return std::upper_bound(m_speedData.begin(), m_speedData.end(), val, pred);
     }
 
+    template <class Val, class Pred>
+    auto Level::speedDataLowerBound(Val val, Pred pred) const
+    {
+        return std::lower_bound(m_speedData.begin(), m_speedData.end(), val, pred);
+    }
+
     Angle Level::getPlanetsDir(const size_t floor, const double seconds) const
     {
         assert(parsed && "AdoCpp::Level class is not parsed");
-        auto it = speedDataUpperBound(114514.0, [&](const double& _nonsense, const SpeedData& sd)
+        auto it = speedDataUpperBound(std::make_tuple(floor, seconds), [](const auto& tuple, const SpeedData& sd)
         {
-            return floor < sd.floor || seconds < sd.seconds;
+            const auto& [floor, seconds] = tuple;
+            return floor < sd.floor || seconds < sd.seconds; // FIXME
         });
         if (it != m_speedData.begin()) --it;
         const double bpm = it->bpm, spb = bpm2crotchet(bpm);
@@ -538,11 +545,14 @@ namespace AdoCpp
     double Level::getBpmForDynamicEvent(const size_t floor, const double angleOffset) const
     {
         assert(parsed && "AdoCpp::Level class is not parsed");
-        auto it = speedDataUpperBound(114514.0, [&](const double& _nonsense, const SpeedData& sd)
+        auto it = speedDataUpperBound(std::make_tuple(floor, angleOffset), [](const auto& tuple, const SpeedData& sd)
         {
+            const auto& [floor, angleOffset] = tuple;
             return floor < sd.floor || (floor == sd.floor && angleOffset < sd.angleOffset);
         });
         if (it != m_speedData.begin()) --it;
+        assert(it->bpm == getBpm([&](const Event::GamePlay::SetSpeed& ss)
+                    { return floor > ss.floor || (floor == ss.floor && angleOffset >= ss.angleOffset); }));
         return it->bpm;
         // return getBpm([&](const Event::GamePlay::SetSpeed& ss)
         //               { return floor > ss.floor || (floor == ss.floor && angleOffset >= ss.angleOffset); });
@@ -596,43 +606,6 @@ namespace AdoCpp
             angle = degrees(360);
         return angle;
     }
-
-    // Vector2lf Level::getCameraPosRelativeToPlayer(const double& beat) const
-    // {
-    //     if (!parsed) throw LevelNotParsedException();
-    //     double a; Vector2lf pos;
-    //     for (size_t j = 1; j < tiles.size(); j++)
-    //     {
-    //         if (beat < tiles[j].beat) break;
-    //         if (j != tiles.size() - 1 && tiles[j + 1].angle == 999) continue;
-    //         if (j == tiles.size() - 1)
-    //             a = beat - tiles[j].beat;
-    //         else
-    //             a = std::min(beat, tiles[j + 1].beat) - tiles[j].beat;
-    //         a = std::min(a / 2, 1.0);
-    //         pos += (tiles[j].pos.o - pos) * a;
-    //     }
-    //     return pos;
-    // }
-
-    // void Level::calcCameraPlayer(const double& seconds, const size_t& floor)
-    // {
-    //     if (!parsed)
-    //         throw LevelNotParsedException();
-    //     const double delta = seconds - m_camera.lastSeconds;
-    //     if (!std::isnormal(delta))
-    //         throw std::exception();
-    //     const Vector2lf& targetPos = tiles[floor].pos.o;
-    //     if (floor != m_camera.lastFloor)
-    //         m_camera.lastFloor = floor, m_camera.lastChangedPos = m_camera.player;
-    //     const double gapDis = (targetPos - m_camera.lastChangedPos).length(),
-    //                  speed = gapDis * getBpmBySeconds(seconds) / 60.0 / 2.0;
-    //     const Vector2lf v = targetPos - m_camera.player, n = v.normalized() * delta * speed;
-    //     if ((m_camera.player - targetPos).lengthSquared() > n.lengthSquared())
-    //         m_camera.player += n;
-    //     else
-    //         m_camera.player = targetPos;
-    // }
 
     double Level::getTiming(const size_t floor, const double seconds) const
     {
@@ -1070,8 +1043,9 @@ namespace AdoCpp
             const auto mt = std::dynamic_pointer_cast<Event::Track::MoveTrack>(event);
             if (mt == nullptr)
                 continue;
-            const size_t b = rel2absIndex(mt->floor, mt->startTile),
-                         e = std::min(tiles.size() - 1, rel2absIndex(mt->floor, mt->endTile));
+            size_t b = std::max(0ull, rel2absIndex(mt->floor, mt->startTile)),
+                   e = std::min(tiles.size() - 1, rel2absIndex(mt->floor, mt->endTile));
+            if (b > e) std::swap(b, e);
             for (size_t i = b; i <= e; i++)
             {
                 auto& d = tiles[i].moveTrackDatas;
@@ -1123,8 +1097,9 @@ namespace AdoCpp
         //     x = (seconds - recolorTrack->seconds) /
         //         (*recolorTrack->duration * bpm2crotchet(getBpmByBeat(recolorTrack->beat))),
         //     y = ease(recolorTrack->ease, x);
-        const size_t b = rel2absIndex(recolorTrack->floor, recolorTrack->startTile),
-                     e = std::min(tiles.size() - 1, rel2absIndex(recolorTrack->floor, recolorTrack->endTile));
+        size_t b = std::max(0ull, rel2absIndex(recolorTrack->floor, recolorTrack->startTile)),
+               e = std::min(tiles.size() - 1, rel2absIndex(recolorTrack->floor, recolorTrack->endTile));
+        if (b > e) std::swap(b, e);
         for (size_t i = b; i <= e; i++)
         {
             tiles[i].trackColor.c = recolorTrack->trackColor;
@@ -1181,7 +1156,7 @@ namespace AdoCpp
                 tile.color = x > 0.5 ? tile.secondaryTrackColor.c : tile.trackColor.c;
                 break;
             }
-        case TrackColorType::Rainbow: // TODO
+        case TrackColorType::Rainbow:
             {
                 auto [h, s, v] = tile.trackColor.c.toHSV();
                 h += x * 360;
@@ -1190,7 +1165,7 @@ namespace AdoCpp
                 tile.color.a = tile.trackColor.c.a;
                 break;
             }
-        case TrackColorType::Volume: // TODO
+        case TrackColorType::Volume:
             {
                 tile.color = static_cast<int>(x * 4 /*?*/) % 2 == 0 ? tile.trackColor.c : tile.secondaryTrackColor.c;
                 break;

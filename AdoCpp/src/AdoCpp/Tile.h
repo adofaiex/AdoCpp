@@ -270,7 +270,7 @@ namespace AdoCpp
          */
         double seconds = 0;
         /**
-         * @brief The current opacity of the tile.
+         * @brief The current opacity of the tile. [0, 100]
          */
         double opacity = 100;
         /**
