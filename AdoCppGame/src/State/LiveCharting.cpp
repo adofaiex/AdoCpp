@@ -9,9 +9,54 @@
 #include <cmath>
 #include "ImGuiFileDialog.h"
 
+#define PUL0(statement) if (statement) parseUpdateLevel(0);
+#define PULA(statement) if (statement) parseUpdateLevel(*game->activeTileIndex);
+
 LiveCharting LiveCharting::m_stateLiveCharting;
 
 using namespace AdoCpp::Event;
+
+template<typename T, size_t N>
+static bool comboBox(const char* label, T* ptr, const char* const (&names)[N])
+{
+    bool changed = false;
+    int selected = static_cast<int>(*ptr);
+    if (ImGui::BeginCombo(label, names[selected]))
+    {
+        for (int n = 0; n < N; n++)
+        {
+            const bool is_selected = selected == n;
+            if (ImGui::Selectable(names[n], is_selected))
+                selected = n, changed = true;
+            if (is_selected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+    if (changed)
+        *ptr = static_cast<T>(selected);
+    return changed;
+}
+static bool comboBox(const char* label, AdoCpp::TrackColorPulse* ptr)
+{
+    bool changed = false;
+    int selected = static_cast<int>(*ptr) + 1;
+    if (ImGui::BeginCombo(label, AdoCpp::cstrTrackColorPulse[selected]))
+    {
+        for (int n = 0; n < IM_ARRAYSIZE(AdoCpp::cstrTrackColorPulse); n++)
+        {
+            const bool is_selected = selected == n;
+            if (ImGui::Selectable(AdoCpp::cstrTrackColorPulse[n], is_selected))
+                selected = n, changed = true;
+            if (is_selected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+    if (changed)
+        *ptr = static_cast<AdoCpp::TrackColorPulse>(selected - 1);
+    return changed;
+}
 
 static bool ImGuiInputFilename(const IGFD::FileDialogConfig& fdConfig, const char* fdTitle, const char* filter,
                                const char* text, const char* hint, std::string* pathPtr)
@@ -547,16 +592,17 @@ void LiveCharting::renderEventSettings() const
                             renderEventSetSpeed(setSpeed.get());
                         if (const auto pause = std::dynamic_pointer_cast<Pause>(event))
                         {
-                            if (ImGui::InputDouble("Duration##Pause", &pause->duration, 0, 0, "%g"))
-                                parseUpdateLevel(*game->activeTileIndex);
-                            if (ImGui::InputDouble("Countdown Ticks", &pause->countdownTicks, 0, 0, "%g"))
-                                parseUpdateLevel(*game->activeTileIndex);
+                            PULA(ImGui::InputDouble("Duration##Pause", &pause->duration, 0, 0, "%g"))
+                            PULA(ImGui::InputDouble("Countdown Ticks", &pause->countdownTicks, 0, 0, "%g"))
                         }
                         using namespace AdoCpp::Event::Track;
                         if (const auto pt = std::dynamic_pointer_cast<PositionTrack>(event))
                             renderEventPositionTrack(pt.get());
                         if (const auto ct = std::dynamic_pointer_cast<ColorTrack>(event))
                             renderEventColorTrack(ct.get());
+                        using namespace AdoCpp::Event::Visual;
+                        if (const auto mc = std::dynamic_pointer_cast<MoveCamera>(event))
+                            renderEventMoveCamera(mc.get());
                         ImGui::EndTabItem();
                     }
                 }
@@ -583,125 +629,60 @@ void LiveCharting::renderEventSetSpeed(GamePlay::SetSpeed* setSpeed) const
     }
     if (setSpeed->speedType == GamePlay::SetSpeed::SpeedType::Multiplier)
         ImGui::BeginDisabled();
-    if (ImGui::InputDouble("Beats Per Minute##SetSpeed", &setSpeed->beatsPerMinute, 0, 0, "%g"))
-        parseUpdateLevel(*game->activeTileIndex);
+    PULA(ImGui::InputDouble("Beats Per Minute##SetSpeed", &setSpeed->beatsPerMinute, 0, 0, "%g"))
     if (setSpeed->speedType == GamePlay::SetSpeed::SpeedType::Multiplier)
         ImGui::EndDisabled();
     if (setSpeed->speedType == GamePlay::SetSpeed::SpeedType::Bpm)
         ImGui::BeginDisabled();
-    if (ImGui::InputDouble("BPM Multiplier##SetSpeed", &setSpeed->bpmMultiplier, 0, 0, "%g"))
-        parseUpdateLevel(*game->activeTileIndex);
+    PULA(ImGui::InputDouble("BPM Multiplier##SetSpeed", &setSpeed->bpmMultiplier, 0, 0, "%g"));
     if (setSpeed->speedType == GamePlay::SetSpeed::SpeedType::Bpm)
         ImGui::EndDisabled();
+    PULA(ImGui::InputDouble("Angle Offset##SetSpeed", &setSpeed->angleOffset, 0, 0, "%g"));
 }
 void LiveCharting::renderEventPositionTrack(Track::PositionTrack* pt) const
 {
-    if (ImGui::InputDouble("X", &pt->positionOffset.x, 0, 0, "%g"))
-        parseUpdateLevel(*game->activeTileIndex);
-    if (ImGui::InputDouble("Y", &pt->positionOffset.y, 0, 0, "%g"))
-        parseUpdateLevel(*game->activeTileIndex);
-    {
-        static int selected;
-        bool changed = false;
-        selected = static_cast<int>(pt->relativeTo.relativeTo);
-        ImGui::Text("Relative to");
-        if (ImGui::BeginCombo("##relTo", AdoCpp::cstrRelativeToTile[selected]))
-        {
-            for (int n = 0; n < IM_ARRAYSIZE(AdoCpp::cstrRelativeToTile); n++)
-            {
-                const bool is_selected = selected == n;
-                if (ImGui::Selectable(AdoCpp::cstrRelativeToTile[n], is_selected))
-                    selected = n, changed = true;
-                if (is_selected)
-                    ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
-        }
-        if (changed)
-            pt->relativeTo.relativeTo = static_cast<AdoCpp::RelativeToTile>(selected),
-            parseUpdateLevel(*game->activeTileIndex);
-    }
-    if (ImGui::InputScalar("tiles", ImGuiDataType_U64, &pt->relativeTo.index, nullptr, nullptr, "%llu"))
-        parseUpdateLevel(*game->activeTileIndex);
-    if (ImGui::InputDouble("Rotation", &pt->rotation, 0, 0, "%g"))
-        parseUpdateLevel(*game->activeTileIndex);
-    if (ImGui::InputDouble("Scale", &pt->scale, 0, 0, "%g"))
-        parseUpdateLevel(*game->activeTileIndex);
-    if (ImGui::InputDouble("Opacity", &pt->opacity, 0, 0, "%g"))
-        parseUpdateLevel(*game->activeTileIndex);
-    if (ImGui::Checkbox("Editor Only", &pt->editorOnly))
-        parseUpdateLevel(*game->activeTileIndex);
-    if (ImGui::Checkbox("Just This Tile", &pt->justThisTile))
-        parseUpdateLevel(*game->activeTileIndex);
+    PULA(ImGui::InputDouble("X", &pt->positionOffset.x, 0, 0, "%g"))
+    PULA(ImGui::InputDouble("Y", &pt->positionOffset.y, 0, 0, "%g"))
+    PULA(comboBox("Relative to", &pt->relativeTo.relativeTo, AdoCpp::cstrRelativeToTile))
+    PULA(ImGui::InputScalar("tiles", ImGuiDataType_U64, &pt->relativeTo.index, nullptr, nullptr, "%llu"))
+    PULA(ImGui::InputDouble("Rotation", &pt->rotation, 0, 0, "%g"))
+    PULA(ImGui::InputDouble("Scale", &pt->scale, 0, 0, "%g"))
+    PULA(ImGui::InputDouble("Opacity", &pt->opacity, 0, 0, "%g"))
+    PULA(ImGui::Checkbox("Editor Only", &pt->editorOnly))
+    PULA(ImGui::Checkbox("Just This Tile", &pt->justThisTile))
 }
 void LiveCharting::renderEventColorTrack(Track::ColorTrack* ct) const
 {
+    PULA(comboBox("Track Color Type##ColorTrack", &ct->trackColorType,  AdoCpp::cstrTrackColorType))
+    PULA(ImGuiInputColor("Track Color##ColorTrack", &ct->trackColor))
+    PULA(ImGuiInputColor("Secondary Track Color##ColorTrack", &ct->secondaryTrackColor))
+    PULA(ImGui::InputDouble("Track Color Animation Duration##ColorTrack", &ct->trackColorAnimDuration, 0, 0, "%g"))
+    PULA(comboBox("Track Color Pulse##ColorTrack", &ct->trackColorPulse))
+    PULA(ImGui::InputScalar("Track Pulse Length##ColorTrack", ImGuiDataType_U32, &ct->trackPulseLength))
+    PULA(comboBox("Track Style##ColorTrack", &ct->trackStyle, AdoCpp::cstrTrackStyle))
+}
+void LiveCharting::renderEventMoveCamera(AdoCpp::Event::Visual::MoveCamera* mc) const
+{
+    ImGui::InputDouble("Duration##MoveCamera", &mc->duration, 0, 0, "%g");
+    static bool enableRelativeTo;
+    enableRelativeTo = mc->relativeTo.has_value();
+    if (ImGui::Checkbox("Enable Relative To##MoveCamera", &enableRelativeTo))
     {
-        static int selected;
-        bool changed = false;
-        selected = static_cast<int>(ct->trackColorType);
-        if (ImGui::BeginCombo("Track Color Type", AdoCpp::cstrTrackColorType[selected]))
-        {
-            for (int n = 0; n < IM_ARRAYSIZE(AdoCpp::cstrTrackColorType); n++)
-            {
-                const bool is_selected = selected == n;
-                if (ImGui::Selectable(AdoCpp::cstrTrackColorType[n], is_selected))
-                    selected = n, changed = true;
-                if (is_selected)
-                    ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
-        }
-        if (changed)
-            ct->trackColorType = static_cast<AdoCpp::TrackColorType>(selected),
-            parseUpdateLevel(*game->activeTileIndex);
+        if (enableRelativeTo) mc->relativeTo = AdoCpp::RelativeToCamera::Player;
+        else mc->relativeTo = std::nullopt;
     }
-    if (ImGuiInputColor("Track Color##ColorTrack", &ct->trackColor))
-        parseUpdateLevel(*game->activeTileIndex);
-    if (ImGuiInputColor("Secondary Track Color##ColorTrack", &ct->secondaryTrackColor))
-        parseUpdateLevel(*game->activeTileIndex);
-    if (ImGui::InputDouble("Track Color Animation Duration##ColorTrack", &ct->trackColorAnimDuration, 0, 0, "%g"))
-        parseUpdateLevel(*game->activeTileIndex);
-    {
-        static int selected;
-        bool changed = false;
-        selected = static_cast<int>(ct->trackColorPulse) + 1;
-        if (ImGui::BeginCombo("Track Color Pulse##ColorTrack", AdoCpp::cstrTrackColorPulse[selected]))
-        {
-            for (int n = 0; n < IM_ARRAYSIZE(AdoCpp::cstrTrackColorPulse); n++)
-            {
-                const bool is_selected = selected == n;
-                if (ImGui::Selectable(AdoCpp::cstrTrackColorPulse[n], is_selected))
-                    selected = n, changed = true;
-                if (is_selected)
-                    ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
-        }
-        if (changed)
-            ct->trackColorPulse = static_cast<AdoCpp::TrackColorPulse>(selected - 1),
-            parseUpdateLevel(*game->activeTileIndex);
-    }
-    ImGui::InputScalar("Track Pulse Length##ColorTrack", ImGuiDataType_U32, &ct->trackPulseLength);
-    {
-        static int selected;
-        bool changed = false;
-        selected = static_cast<int>(ct->trackStyle);
-        if (ImGui::BeginCombo("Track Style##ColorTrack", AdoCpp::cstrTrackStyle[selected]))
-        {
-            for (int n = 0; n < IM_ARRAYSIZE(AdoCpp::cstrTrackStyle); n++)
-            {
-                const bool is_selected = selected == n;
-                if (ImGui::Selectable(AdoCpp::cstrTrackStyle[n], is_selected))
-                    selected = n, changed = true;
-                if (is_selected)
-                    ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
-        }
-        if (changed)
-            ct->trackStyle = static_cast<AdoCpp::TrackStyle>(selected), parseUpdateLevel(*game->activeTileIndex);
-    }
+    if (enableRelativeTo)
+        comboBox("Relative To##MoveCamera", &mc->relativeTo.value(), AdoCpp::cstrRelativeToCamera);
+    static std::string xStr, yStr, rotationStr, zoomStr;
+    xStr = mc->position.first ? std::to_string(*mc->position.first) : "";
+    yStr = mc->position.second ? std::to_string(*mc->position.second) : "";
+    rotationStr = mc->rotation ? std::to_string(*mc->rotation) : "";
+    zoomStr = mc->zoom ? std::to_string(*mc->zoom) : "";
+    ImGui::InputText("X##MoveCamera", &xStr);
+    ImGui::InputText("Y##MoveCamera", &yStr);
+    ImGui::InputText("Rotation##MoveCamera", &rotationStr);
+    ImGui::InputText("Zoom##MoveCamera", &zoomStr);
+    comboBox("Easing##MoveCamera", &mc->ease, AdoCpp::cstrEasing);
 }
 void LiveCharting::parseUpdateLevel(const size_t floor) const
 {
@@ -716,199 +697,56 @@ void LiveCharting::renderSSong() const
     IGFD::FileDialogConfig cfg;
     cfg.path = game->levelPath.parent_path().string();
     cfg.flags = ImGuiFileDialogFlags_Modal;
-    if (ImGuiInputFilename(cfg, "Select a file", ".ogg", "Song Filename", "No files selected", &settings.songFilename))
-        parseUpdateLevel(0);
-    if (ImGui::InputDouble("BPM##SongSettings", &settings.bpm, 0, 0, "%g"))
-        parseUpdateLevel(0);
-    if (ImGui::InputDouble("Volume##SongSettings", &settings.volume, 0, 0, "%g"))
-        parseUpdateLevel(0);
-    if (ImGui::InputDouble("Offset##SongSettings", &settings.offset, 0, 0, "%g"))
-        parseUpdateLevel(0);
-    if (ImGui::InputDouble("Pitch##SongSettings", &settings.pitch, 0, 0, "%g"))
-        parseUpdateLevel(0);
-    {
-        static int selected;
-        selected = static_cast<int>(settings.hitsound);
-        bool changed = false;
-        if (ImGui::BeginCombo("Hitsound", AdoCpp::cstrHitsound[selected]))
-        {
-            for (int n = 0; n < IM_ARRAYSIZE(AdoCpp::cstrHitsound); n++)
-            {
-                const bool is_selected = selected == n;
-                if (ImGui::Selectable(AdoCpp::cstrHitsound[n], is_selected))
-                    selected = n, changed = true;
-                if (is_selected)
-                    ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
-        }
-        if (changed)
-            settings.hitsound = static_cast<AdoCpp::Hitsound>(selected), parseUpdateLevel(0);
-    }
-    if (ImGui::InputDouble("Hitsound Volume##SongSettings", &settings.hitsoundVolume, 0, 0, "%g"))
-        parseUpdateLevel(0);
-    if (ImGui::InputDouble("Countdown Ticks##SongSettings", &settings.countdownTicks, 0, 0, "%g"))
-        parseUpdateLevel(0);
+    PUL0(ImGuiInputFilename(cfg, "Select a file", ".ogg", "Song Filename", "No files selected", &settings.songFilename))
+    PUL0(ImGui::InputDouble("BPM##SongSettings", &settings.bpm, 0, 0, "%g"))
+    PUL0(ImGui::InputDouble("Volume##SongSettings", &settings.volume, 0, 0, "%g"))
+    PUL0(ImGui::InputDouble("Offset##SongSettings", &settings.offset, 0, 0, "%g"))
+    PUL0(ImGui::InputDouble("Pitch##SongSettings", &settings.pitch, 0, 0, "%g"))
+    PUL0(comboBox("Hitsound##SongSettings", &settings.hitsound, AdoCpp::cstrHitsound))
+    PUL0(ImGui::InputDouble("Hitsound Volume##SongSettings", &settings.hitsoundVolume, 0, 0, "%g"))
+    PUL0(ImGui::InputDouble("Countdown Ticks##SongSettings", &settings.countdownTicks, 0, 0, "%g"))
 }
 void LiveCharting::renderSLevel() const
 {
     auto& settings = game->level.settings;
-    if (ImGui::InputText("Artist##LevelSettings", &settings.artist))
-        parseUpdateLevel(0);
-    if (ImGui::InputText("Song##LevelSettings", &settings.song))
-        parseUpdateLevel(0);
-    if (ImGui::InputText("Author##LevelSettings", &settings.author))
-        parseUpdateLevel(0);
-    if (ImGui::Checkbox("Separate Countdown Time##LevelSettings", &settings.separateCountdownTime))
-        parseUpdateLevel(0);
+    PUL0(ImGui::InputText("Artist##LevelSettings", &settings.artist))
+    PUL0(ImGui::InputText("Song##LevelSettings", &settings.song))
+    PUL0(ImGui::InputText("Author##LevelSettings", &settings.author))
+    PUL0(ImGui::Checkbox("Separate Countdown Time##LevelSettings", &settings.separateCountdownTime))
 }
 void LiveCharting::renderSTrack() const
 {
     auto& settings = game->level.settings;
-    {
-        static int selected;
-        selected = static_cast<int>(settings.trackColorType);
-        bool changed = false;
-        if (ImGui::BeginCombo("Track Color Type##TrackSettings", AdoCpp::cstrTrackColorType[selected]))
-        {
-            for (int n = 0; n < IM_ARRAYSIZE(AdoCpp::cstrTrackColorType); n++)
-            {
-                const bool is_selected = selected == n;
-                if (ImGui::Selectable(AdoCpp::cstrTrackColorType[n], is_selected))
-                    selected = n, changed = true;
-                if (is_selected)
-                    ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
-        }
-        if (changed)
-            settings.trackColorType = static_cast<AdoCpp::TrackColorType>(selected), parseUpdateLevel(0);
-    }
-
-    if (ImGuiInputColor("Track Color##TrackSettings", &settings.trackColor))
-        parseUpdateLevel(0);
-    if (ImGuiInputColor("Secondary Track Color##TrackSettings", &settings.trackColor))
-        parseUpdateLevel(0);
-    if (ImGui::InputDouble("Track Color Animation Duration##TrackSettings", &settings.trackColorAnimDuration, 0, 0,
-                           "%g"))
-        parseUpdateLevel(0);
-    {
-        static int selected;
-        selected = static_cast<int>(settings.trackColorPulse) + 1;
-        bool changed = false;
-        if (ImGui::BeginCombo("Track Color Pulse##TrackSettings", AdoCpp::cstrTrackColorPulse[selected]))
-        {
-            for (int n = 0; n < IM_ARRAYSIZE(AdoCpp::cstrTrackColorPulse); n++)
-            {
-                const bool is_selected = selected == n;
-                if (ImGui::Selectable(AdoCpp::cstrTrackColorPulse[n], is_selected))
-                    selected = n, changed = true;
-                if (is_selected)
-                    ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
-        }
-        if (changed)
-            settings.trackColorPulse = static_cast<AdoCpp::TrackColorPulse>(selected - 1), parseUpdateLevel(0);
-    }
-    if (ImGui::InputScalar("Track Pulse Length##TrackSettings", ImGuiDataType_U32, &settings.trackPulseLength))
-        parseUpdateLevel(0);
-    {
-        static int selected;
-        selected = static_cast<int>(settings.trackStyle);
-        bool changed = false;
-        if (ImGui::BeginCombo("Track Style##TrackSettings", AdoCpp::cstrTrackStyle[selected]))
-        {
-            for (int n = 0; n < IM_ARRAYSIZE(AdoCpp::cstrTrackStyle); n++)
-            {
-                const bool is_selected = selected == n;
-                if (ImGui::Selectable(AdoCpp::cstrTrackStyle[n], is_selected))
-                    selected = n, changed = true;
-                if (is_selected)
-                    ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
-        }
-        if (changed)
-            settings.trackStyle = static_cast<AdoCpp::TrackStyle>(selected), parseUpdateLevel(0);
-    }
-    {
-        static int selected;
-        selected = static_cast<int>(settings.trackAnimation);
-        if (ImGui::BeginCombo("Track Animation##TrackSettings", AdoCpp::cstrTrackAnimation[selected]))
-        {
-            for (int n = 0; n < IM_ARRAYSIZE(AdoCpp::cstrTrackAnimation); n++)
-            {
-                const bool is_selected = selected == n;
-                if (ImGui::Selectable(AdoCpp::cstrTrackAnimation[n], is_selected))
-                    selected = n;
-                if (is_selected)
-                    ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
-        }
-        settings.trackAnimation = static_cast<AdoCpp::TrackAnimation>(selected);
-    }
-    if (ImGui::InputDouble("Beats ahead##TrackSettings", &settings.beatsAhead, 0, 0, "%g"))
-        parseUpdateLevel(0);
-    {
-        static int selected;
-        selected = static_cast<int>(settings.trackDisappearAnimation);
-        bool changed = false;
-        if (ImGui::BeginCombo("Track Disappear Animation##TrackSettings",
-                              AdoCpp::cstrTrackDisappearAnimation[selected]))
-        {
-            for (int n = 0; n < IM_ARRAYSIZE(AdoCpp::cstrTrackDisappearAnimation); n++)
-            {
-                const bool is_selected = selected == n;
-                if (ImGui::Selectable(AdoCpp::cstrTrackDisappearAnimation[n], is_selected))
-                    selected = n, changed = true;
-                if (is_selected)
-                    ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
-        }
-        if (changed)
-            settings.trackDisappearAnimation = static_cast<AdoCpp::TrackDisappearAnimation>(selected),
-            parseUpdateLevel(0);
-    }
-    if (ImGui::InputDouble("Beats behind##TrackSettings", &settings.beatsBehind, 0, 0, "%g"))
-        parseUpdateLevel(0);
+    PUL0(comboBox("Track Color Type##TrackSettings", &settings.trackColorType, AdoCpp::cstrTrackColorType))
+    PUL0(ImGuiInputColor("Track Color##TrackSettings", &settings.trackColor))
+    PUL0(ImGuiInputColor("Secondary Track Color##TrackSettings", &settings.trackColor))
+    PUL0(ImGui::InputDouble("Track Color Animation Duration##TrackSettings", &settings.trackColorAnimDuration, 0, 0, "%g"))
+    PUL0(comboBox("Track Color Pulse##TrackSettings", &settings.trackColorPulse))
+    PUL0(ImGui::InputScalar("Track Pulse Length##TrackSettings", ImGuiDataType_U32, &settings.trackPulseLength))
+    PUL0(comboBox("Track Style##TrackSettings", &settings.trackStyle, AdoCpp::cstrTrackStyle))
+    PUL0(comboBox("Track Animation##TrackSettings", &settings.trackAnimation, AdoCpp::cstrTrackAnimation))
+    PUL0(ImGui::InputDouble("Beats ahead##TrackSettings", &settings.beatsAhead, 0, 0, "%g"))
+    PUL0(comboBox("Track Disappear Animation##TrackSettings", &settings.trackDisappearAnimation, AdoCpp::cstrTrackDisappearAnimation))
+    PUL0(ImGui::InputDouble("Beats behind##TrackSettings", &settings.beatsBehind, 0, 0, "%g"))
 }
 void LiveCharting::renderSBackground() const
 {
     auto& settings = game->level.settings;
-    if (ImGuiInputColor("Background color##BackgroundSettings", &settings.backgroundColor))
-        parseUpdateLevel(0);
+    PUL0(ImGuiInputColor("Background color##BackgroundSettings", &settings.backgroundColor))
 }
 void LiveCharting::renderSCamera() const
 {
     auto& settings = game->level.settings;
-    {
-        static int selected;
-        selected = static_cast<int>(settings.relativeTo);
-        bool changed = false;
-        if (ImGui::BeginCombo("Relative To##CameraSettings", AdoCpp::cstrRelativeToCamera[selected]))
-        {
-            for (int n = 0; n < IM_ARRAYSIZE(AdoCpp::cstrRelativeToCamera); n++)
-            {
-                const bool is_selected = selected == n;
-                if (ImGui::Selectable(AdoCpp::cstrRelativeToCamera[n], is_selected))
-                    selected = n, changed = true;
-                if (is_selected)
-                    ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
-        }
-        if (changed)
-            settings.relativeTo = static_cast<AdoCpp::RelativeToCamera>(selected), parseUpdateLevel(0);
-    }
-    // TODO
+    PUL0(comboBox("Relative To##CameraSettings", &settings.relativeTo, AdoCpp::cstrRelativeToCamera))
+    PUL0(ImGui::InputDouble("X##CameraSettings", &settings.position.x, 0, 0, "%g"))
+    PUL0(ImGui::InputDouble("Y##CameraSettings", &settings.position.y, 0, 0, "%g"))
+    PUL0(ImGui::InputDouble("Rotation##CameraSettings", &settings.rotation, 0, 0, "%g"))
+    PUL0(ImGui::InputDouble("Zoom##CameraSettings", &settings.zoom, 0, 0, "%g"))
 }
 void LiveCharting::renderSMiscellaneous() const
 {
     auto& settings = game->level.settings;
-    ImGui::Checkbox("Stick to floors##MiscSettings", &settings.stickToFloors);
+    PUL0(ImGui::Checkbox("Stick to floors##MiscSettings", &settings.stickToFloors));
 }
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void LiveCharting::renderSDecorations() const
