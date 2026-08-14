@@ -127,16 +127,6 @@ namespace AdoCpp
     };
 
     /**
-     * @brief Planets struct.
-     */
-    struct Planets
-    {
-        Planet fire;
-        Planet ice;
-        Planet third;
-    };
-
-    /**
      * @brief Level class.
      */
     class Level
@@ -269,19 +259,11 @@ namespace AdoCpp
          * @brief Get the included angle between the two planets.
          * @param floor The index of the tile.
          * @param seconds The seconds.
-         * @return The angle of the two planets.
+         * @return The angle of the planets.
          */
         [[nodiscard]] Angle getPlanetsDir(size_t floor, double seconds) const;
 
-        /**
-         * @brief Get the position of the two planets.
-         * @param floor The index of the tile.
-         * @param seconds The seconds.
-         * @return The position of the two planets.
-         */
-        [[nodiscard]] std::pair<Vector2lf, Vector2lf> getPlanetsPos(size_t floor, double seconds) const;
-
-        [[nodiscard]] static bool isFirePlanetStatic(size_t floor);
+        [[nodiscard]] std::vector<Planet> getPlanets(size_t floor, double seconds) const;
 
         /**
          * @brief Get the index of the tile that one of the planets lands on.
@@ -389,6 +371,8 @@ namespace AdoCpp
 
         [[nodiscard]] bool disableAnimateTrack() const;
         void disableAnimateTrack(bool disable);
+
+        [[nodiscard]] static std::vector<int> getEachPlanetsOrder(const std::vector<int>& planetsOrder);
 
         /**
          * @brief The level's settings.

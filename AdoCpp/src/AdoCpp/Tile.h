@@ -328,6 +328,12 @@ namespace AdoCpp
          */
         Color color;
 
+        bool threePlanet{false};
+
+        /**
+         * 
+         */
+        std::vector<int> planetsOrder;
 
         size_t trackAnimationFloor = 0;
         TrackAnimation trackAnimation = TrackAnimation::None;

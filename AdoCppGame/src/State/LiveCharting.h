@@ -43,8 +43,8 @@ protected:
 
 private:
     static LiveCharting m_stateLiveCharting;
-    sf::CircleShape planet1, planet2;
-    size_t nowTileIndex{}, playerTileIndex{};
+    sf::CircleShape planet1, planet2, planet3;
+    size_t nowTileIndex{};
     double seconds{}, beat{};
     sf::Clock spareClock;
     double spareClockOffset{};

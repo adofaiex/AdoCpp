@@ -37,6 +37,8 @@ namespace AdoCpp
 
         if (strcmp(eventType, "Hold") == 0)
             return new Dlc::Hold(json);
+        if (strcmp(eventType, "MultiPlanet") == 0)
+            return new Dlc::MultiPlanet(json);
 
         return nullptr;
     }

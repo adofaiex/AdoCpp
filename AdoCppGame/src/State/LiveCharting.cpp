@@ -9,6 +9,11 @@
 #include <cmath>
 #include "ImGuiFileDialog.h"
 
+static sf::Vector2f vectorConvert(AdoCpp::Vector2lf vec)
+{
+    return {static_cast<float>(vec.x), static_cast<float>(vec.y)};
+}
+
 #define PUL0(statement) if (statement) parseUpdateLevel(0);
 #define PULA(statement) if (statement) parseUpdateLevel(*game->activeTileIndex);
 
@@ -110,10 +115,13 @@ void LiveCharting::init(Game* _game)
 
     planet1.setFillColor(sf::Color::Red);
     planet2.setFillColor(sf::Color::Blue);
+    planet3.setFillColor(sf::Color::Green);
     planet1.setRadius(0.25);
     planet2.setRadius(0.25);
-    planet1.setOrigin({planet1.getRadius(), planet1.getRadius()});
+    planet3.setRadius(0.25);
+    planet1.setOrigin({planet1.getRadius(), planet1.getRadius()}); // center
     planet2.setOrigin({planet2.getRadius(), planet2.getRadius()});
+    planet3.setOrigin({planet3.getRadius(), planet3.getRadius()});
     if (!game->origMusicPath.empty())
     {
         try
@@ -301,9 +309,12 @@ void LiveCharting::update()
 
     if (game->level.isParsed())
     {
-        const auto [pos1, pos2] = game->level.getPlanetsPos(game->level.getFloorBySeconds(seconds), seconds);
-        planet1.setPosition({static_cast<float>(pos1.x), static_cast<float>(pos1.y)});
-        planet2.setPosition({static_cast<float>(pos2.x), static_cast<float>(pos2.y)});
+        const auto planets = game->level.getPlanets(nowTileIndex, seconds);
+        std::vector<int> po = game->level.tiles[nowTileIndex].planetsOrder;
+        std::vector<int> epo = AdoCpp::Level::getEachPlanetsOrder(po);
+        if (epo[0] != -1) planet1.setPosition(vectorConvert(planets[epo[0]].position));
+        if (epo[1] != -1) planet2.setPosition(vectorConvert(planets[epo[1]].position));
+        if (epo[2] != -1) planet3.setPosition(vectorConvert(planets[epo[2]].position));
     }
 
     game->tileSystem.setActiveTileIndex(game->activeTileIndex);
@@ -323,8 +334,13 @@ void LiveCharting::render()
     // render the world
     game->window.setView(game->view);
     game->window.draw(game->tileSystem);
-    game->window.draw(planet1);
-    game->window.draw(planet2);
+
+    std::vector<int> po = game->level.tiles[nowTileIndex].planetsOrder;
+    std::vector<int> epo = AdoCpp::Level::getEachPlanetsOrder(po);
+
+    if (epo[0] != -1) game->window.draw(planet1);
+    if (epo[1] != -1) game->window.draw(planet2);
+    if (epo[2] != -1) game->window.draw(planet3);
 
     // render the GUI
     sf::View defaultView = game->window.getDefaultView();

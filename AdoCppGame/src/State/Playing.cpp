@@ -4,16 +4,24 @@
 
 StatePlaying StatePlaying::m_statePlaying;
 
+static sf::Vector2f vectorConvert(AdoCpp::Vector2lf vec)
+{
+    return {static_cast<float>(vec.x), static_cast<float>(vec.y)};
+}
+
 void StatePlaying::init(Game* _game)
 {
     game = _game;
 
     planet1.setFillColor(sf::Color::Red);
     planet2.setFillColor(sf::Color::Blue);
+    planet3.setFillColor(sf::Color::Green);
     planet1.setRadius(0.25);
     planet2.setRadius(0.25);
-    planet1.setOrigin({planet1.getRadius(), planet1.getRadius()});
+    planet3.setRadius(0.25);
+    planet1.setOrigin({planet1.getRadius(), planet1.getRadius()}); // center
     planet2.setOrigin({planet2.getRadius(), planet2.getRadius()});
+    planet3.setOrigin({planet3.getRadius(), planet3.getRadius()});
 
     hitTextSystem.clear();
     hitTextSystem.hidePerfects = game->config.hidePerfects;
@@ -227,10 +235,8 @@ void StatePlaying::update()
                 if (playerTileIndex == 0)
                     break;
                 AdoCpp::Vector2lf pos;
-                if (AdoCpp::Level::isFirePlanetStatic(playerTileIndex))
-                    pos = game->level.getPlanetsPos(playerTileIndex, seconds).second;
-                else
-                    pos = game->level.getPlanetsPos(playerTileIndex, seconds).first;
+                int idx = game->level.tiles[playerTileIndex].planetsOrder[1];
+                pos = game->level.getPlanets(playerTileIndex, seconds)[idx].position;
                 hitTextSystem.addHitText(seconds, hitMargin, {float(pos.x), float(pos.y)});
             }
             else
@@ -263,18 +269,17 @@ void StatePlaying::update()
     // Update planets' positions
     if (!waiting)
     {
-        const auto [p1pos, p2pos] = game->level.getPlanetsPos(playerTileIndex, seconds);
-        planet1.setPosition({float(p1pos.x), float(p1pos.y)});
-        planet2.setPosition({float(p2pos.x), float(p2pos.y)});
+        const auto planets = game->level.getPlanets(playerTileIndex, seconds);
+        std::vector<int> po = game->level.tiles[playerTileIndex].planetsOrder;
+        std::vector<int> epo = AdoCpp::Level::getEachPlanetsOrder(po);
+        if (epo[0] != -1) planet1.setPosition(vectorConvert(planets[epo[0]].position));
+        if (epo[1] != -1) planet2.setPosition(vectorConvert(planets[epo[1]].position));
+        if (epo[2] != -1) planet3.setPosition(vectorConvert(planets[epo[2]].position));
     }
     else
     {
         const auto pos = tiles[playerTileIndex].pos.o;
-
-        if (AdoCpp::Level::isFirePlanetStatic(playerTileIndex))
-            planet1.setPosition({float(pos.x), float(pos.y)});
-        else
-            planet2.setPosition({float(pos.x), float(pos.y)});
+        planet1.setPosition(vectorConvert(pos));
     }
 
     // Update Systems
@@ -340,10 +345,11 @@ void StatePlaying::render()
 
     game->window.draw(game->tileSystem);
 
-    if (!waiting || AdoCpp::Level::isFirePlanetStatic(playerTileIndex))
-        game->window.draw(planet1);
-    if (!waiting || !AdoCpp::Level::isFirePlanetStatic(playerTileIndex))
-        game->window.draw(planet2);
+    std::vector<int> po = game->level.tiles[playerTileIndex].planetsOrder;
+    std::vector<int> epo = AdoCpp::Level::getEachPlanetsOrder(po);
+    if (!waiting && epo[0] != -1 || waiting && epo[0] == 0) game->window.draw(planet1);
+    if (!waiting && epo[1] != -1 || waiting && epo[1] == 0) game->window.draw(planet2);
+    if (!waiting && epo[2] != -1 || waiting && epo[2] == 0) game->window.draw(planet3);
 
     game->window.draw(hitTextSystem);
 

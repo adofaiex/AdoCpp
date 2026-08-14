@@ -469,17 +469,27 @@ namespace AdoCpp
         }
         return angle;
     }
-    std::pair<Vector2lf, Vector2lf> Level::getPlanetsPos(const size_t floor, const double seconds) const
+    std::vector<Planet> Level::getPlanets(size_t floor, double seconds) const
     {
         assert(parsed && "AdoCpp::Level class is not parsed");
-        Vector2lf p2, p1 = p2 = tiles[floor].stickToFloors ? tiles[floor].pos.c : tiles[floor].pos.o;
-        const Angle angle = getPlanetsDir(floor, seconds);
-        p2.x += cos(angle.rad()), p2.y += sin(angle.rad());
-        if (isFirePlanetStatic(floor))
-            return std::make_pair(p1, p2);
-        return std::make_pair(p2, p1);
+        const Vector2lf pos = tiles[floor].stickToFloors ? tiles[floor].pos.c : tiles[floor].pos.o;
+
+        Angle angle = getPlanetsDir(floor, seconds);
+
+        std::vector<Planet> planets;
+        planets.push_back({.angle = degrees(0), .position = pos, .radius = 1});
+        planets.push_back({.angle = angle, .position = pos + Vector2lf(cos(angle.rad()), sin(angle.rad())), .radius = 1});
+
+        if (!tiles[floor].threePlanet)
+            return planets;
+
+        Angle angleThird = angle;
+        if (tiles[floor].orbit) angleThird -= degrees(60);
+        else angleThird += degrees(60);
+
+        planets.push_back({.angle = angle, .position = pos + Vector2lf(cos(angleThird.rad()), sin(angleThird.rad())), .radius = 1});
+        return planets;
     }
-    bool Level::isFirePlanetStatic(const size_t floor) { return floor % 2 == 0; }
     size_t Level::getFloorByBeat(const double beat) const
     {
         assert(parsed && "AdoCpp::Level class is not parsed");
@@ -666,16 +676,25 @@ namespace AdoCpp
         m_disableAnimateTrack = disable;
     }
 
+    std::vector<int> Level::getEachPlanetsOrder(const std::vector<int>& planetsOrder)
+    {
+        std::vector<int> epo(3, -1);
+        for (int i = 0; i < planetsOrder.size(); i++)
+            epo[planetsOrder[i] - 1] = i;
+        return epo;
+    }
+
     void Level::parseTiles(const size_t beginFloor)
     {
         // clang-format off
-        std::vector<bool>                                          twirls(tiles.size());
-        std::vector<double>                                        pauses(tiles.size());
-        std::vector<std::shared_ptr<Event::GamePlay::SetHitsound>> setHitsounds(tiles.size());
-        std::vector<std::shared_ptr<Event::Track::PositionTrack>>  positionTracks(tiles.size());
-        std::vector<std::shared_ptr<Event::Track::ColorTrack>>     colorTracks(tiles.size());
-        std::vector<std::shared_ptr<Event::Track::AnimateTrack>>   animateTracks(tiles.size());
-        std::vector<std::shared_ptr<Event::Dlc::Hold>>             holds(tiles.size());
+        std::vector<bool>                          twirls(tiles.size());
+        std::vector<double>                        pauses(tiles.size());
+        std::vector<Event::GamePlay::SetHitsound*> setHitsounds(tiles.size());
+        std::vector<Event::Track::PositionTrack*>  positionTracks(tiles.size());
+        std::vector<Event::Track::ColorTrack*>     colorTracks(tiles.size());
+        std::vector<Event::Track::AnimateTrack*>   animateTracks(tiles.size());
+        std::vector<Event::Dlc::Hold*>             holds(tiles.size());
+        std::vector<Event::Dlc::MultiPlanet*>      multiPlanets(tiles.size());
         for (size_t floor = beginFloor; floor < tiles.size(); floor++)
         {
             for (const auto& event : tiles[floor].events)
@@ -683,26 +702,29 @@ namespace AdoCpp
                 event->floor = floor;
                 if (!event->active)
                     continue;
-
-                if (typeid(*event.get()) == typeid(Event::GamePlay::Twirl))
-                    twirls[event->floor] = true;
-                else if (const auto pause                = std::dynamic_pointer_cast<Event::GamePlay::Pause>(event))
+                Event::Event* const eventPtr = event.get();
+                if (const auto pause                     = dynamic_cast<Event::GamePlay::Twirl*>(eventPtr))
+                    twirls[pause->floor] = true;
+                else if (const auto pause                = dynamic_cast<Event::GamePlay::Pause*>(eventPtr))
                     pauses[pause->floor]                 = pause->duration;
-                else if (const auto setHitsound          = std::dynamic_pointer_cast<Event::GamePlay::SetHitsound>(event))
+                else if (const auto setHitsound          = dynamic_cast<Event::GamePlay::SetHitsound*>(eventPtr))
                     setHitsounds[setHitsound->floor]     = setHitsound;
 
-                else if (const auto positionTrack        = std::dynamic_pointer_cast<Event::Track::PositionTrack>(event))
+                else if (const auto positionTrack        = dynamic_cast<Event::Track::PositionTrack*>(eventPtr))
                     positionTracks[positionTrack->floor] = positionTrack;
-                else if (const auto colorTrack           = std::dynamic_pointer_cast<Event::Track::ColorTrack>(event))
+                else if (const auto colorTrack           = dynamic_cast<Event::Track::ColorTrack*>(eventPtr))
                     colorTracks[colorTrack->floor]       = colorTrack;
-                else if (const auto animateTrack         = std::dynamic_pointer_cast<Event::Track::AnimateTrack>(event))
+                else if (const auto animateTrack         = dynamic_cast<Event::Track::AnimateTrack*>(eventPtr))
                     animateTracks[animateTrack->floor]   = animateTrack;
-                else if (const auto hold                 = std::dynamic_pointer_cast<Event::Dlc::Hold>(event))
+                else if (const auto hold                 = dynamic_cast<Event::Dlc::Hold*>(eventPtr))
                     holds[hold->floor]                   = hold;
+                else if (const auto multiPlanet          = dynamic_cast<Event::Dlc::MultiPlanet*>(eventPtr))
+                    multiPlanets[multiPlanet->floor]     = multiPlanet;
             }
         }
         // clang-format on
         tiles[0].orbit = Clockwise, tiles[0].beat = 0, settings.apply(tiles[0]);
+        tiles[0].planetsOrder = {1, 2};
         Vector2lf nextPosOff;
         for (size_t i = beginFloor; i < tiles.size(); i++)
         {
@@ -711,6 +733,38 @@ namespace AdoCpp
                 tiles[i].orbit = tiles[i - 1].orbit;
             if (twirls[i])
                 tiles[i].orbit = !tiles[i].orbit;
+            
+            if (i != 0)
+                tiles[i].threePlanet = tiles[i - 1].threePlanet;
+            if (multiPlanets[i])
+                tiles[i].threePlanet = multiPlanets[i]->three;
+
+            if (i != 0)
+            {
+                // {1, 2} -> {2, 1}
+                // {1, 2, 3} -> {3, 1, 2}
+                auto& planets = tiles[i].planetsOrder;
+                planets = tiles[i - 1].planetsOrder;
+                planets[0] = tiles[i - 1].planetsOrder.back();
+                for (int j = 1; j < planets.size(); j++)
+                    planets[j] = tiles[i - 1].planetsOrder[j - 1];
+
+                if (multiPlanets[i])
+                {
+                    if (multiPlanets[i]->three && planets.size() == 2)
+                    {
+                        int missing;
+                        if (find(planets.begin(), planets.end(), 1) == planets.end()) missing = 1;
+                        if (find(planets.begin(), planets.end(), 2) == planets.end()) missing = 2;
+                        if (find(planets.begin(), planets.end(), 3) == planets.end()) missing = 3;
+                        planets.push_back(missing);
+                    }
+                    if (!multiPlanets[i]->three && planets.size() == 3)
+                    {
+                        planets.pop_back();
+                    }
+                }
+            }
 
             // Tile's beat
             if (i != 0)
@@ -728,6 +782,8 @@ namespace AdoCpp
                         angle = tiles[i - 1].angle - degrees(180) - tiles[i].angle;
                     if (tiles[i - 1].orbit == CounterClockwise)
                         angle *= -1;
+                    if (tiles[i - 1].threePlanet)
+                        angle -= degrees(60);
                     angle = angle.wrapUnsigned();
                     if (angle == degrees(0))
                         angle = degrees(360);
